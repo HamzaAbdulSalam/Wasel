@@ -2,17 +2,13 @@ const express = require("express");
 const { authenticate, authorize } = require("../middleware/auth");
 const UpdateService = require("../services/UpdateService");
 const CheckpointService = require("../services/CheckpointService");
-const db = require("../utils/db");
 
 const router = express.Router();
 
 // Get all hazards
 router.get("/hazards", async (req, res) => {
   try {
-    const result = await db.query(
-      "SELECT id, name, description FROM hazards ORDER BY name",
-    );
-    res.json(result.rows);
+    res.status(503).json({ message: "Database removed: Feature not available" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
