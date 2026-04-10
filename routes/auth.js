@@ -4,7 +4,6 @@ const { authenticate, authorize } = require("../middleware/auth");
 
 const router = express.Router();
 
-// Register
 router.post("/register", async (req, res) => {
   try {
     const user = await AuthService.register(req.body);
@@ -14,7 +13,7 @@ router.post("/register", async (req, res) => {
   }
 });
 
-// Login
+
 router.post("/login", async (req, res) => {
   try {
     const result = await AuthService.login(req.body);
@@ -24,7 +23,6 @@ router.post("/login", async (req, res) => {
   }
 });
 
-// Protected route example
 router.get("/profile", authenticate, async (req, res) => {
   try {
     const user = await AuthService.getUserById(req.user.id);
@@ -35,7 +33,6 @@ router.get("/profile", authenticate, async (req, res) => {
   }
 });
 
-// Admin only route
 router.get("/admin", authenticate, authorize("admin"), (req, res) => {
   res.json({ message: "Welcome, admin!" });
 });

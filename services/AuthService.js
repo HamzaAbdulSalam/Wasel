@@ -1,7 +1,7 @@
 const Joi = require("joi");
 const bcrypt = require("bcryptjs");
 const { PrismaClient } = require("@prisma/client");
-const jwt = require("jsonwebtoken");
+const JWTUtils = require("../utils/jwt");
 
 const prisma = new PrismaClient();
 
@@ -78,12 +78,12 @@ class AuthService {
       throw new Error("Invalid email or password");
     }
 
-    // Generate JWT token
-    const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
-      process.env.JWT_SECRET || "your-secret-key",
-      { expiresIn: "24h" }
-    );
+    // Generate JWT token using JWTUtils
+    const token = JWTUtils.generateToken({
+      id: user.id,
+      email: user.email,
+      role: user.role
+    });
 
     return {
       message: "Login successful",
