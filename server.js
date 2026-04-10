@@ -1,5 +1,6 @@
 const express = require("express");
 const authRoutes = require("./routes/auth");
+const incidentsRoutes = require("./routes/incidents");
 
 let updatesRoutes;
 try {
@@ -15,6 +16,7 @@ app.use(express.json());
 
 // Routes
 app.use("/auth", authRoutes);
+app.use("/incidents", incidentsRoutes);
 if (updatesRoutes) {
   app.use("/updates", updatesRoutes);
   console.log("Updates routes loaded");
