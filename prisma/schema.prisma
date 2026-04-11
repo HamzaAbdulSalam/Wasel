@@ -22,6 +22,9 @@ model User {
   // Relations
   incidents     RoadIncident[]
   statusHistories IncidentStatus[]
+  reports       Report[] @relation("ReportCreator")
+  reportVotes   ReportVote[] @relation("ReportVotes")
+  moderations   ReportModeration[] @relation("ReportModerations")
 }
 
 // Road Incident model
@@ -76,4 +79,92 @@ model IncidentStatus {
   
   @@index([incidentId])
   @@index([userId])
+}
+
+// Crowdsourced Report model
+model Report {
+  id          Int     @id @default(autoincrement())
+  
+  // Basic info
+  category    String  // traffic_jam, accident, hazard, construction, etc.
+  description String
+  
+  // Location data
+  city        String
+  latitude    Decimal @db.Decimal(10, 8)
+  longitude   Decimal @db.Decimal(11, 8)
+  
+  // Status and credibility
+  status      String  @default("active") // active, verified, flagged, rejected, resolved
+  credibilityScore Float @default(0) // Calculated from votes
+  
+  // User who reported
+  userId      Int
+  user        User    @relation("ReportCreator", fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Relations
+  votes       ReportVote[]
+  moderations ReportModeration[]
+  
+  // Duplicate detection
+  isDuplicate Boolean @default(false)
+  duplicateOf Int?
+  
+  // Metadata
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([city])
+  @@index([status])
+  @@index([userId])
+  @@index([credibilityScore])
+}
+
+// Report Vote (for credibility scoring)
+model ReportVote {
+  id        Int     @id @default(autoincrement())
+  
+  // Reference to report
+  reportId  Int
+  report    Report  @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  
+  // Voter
+  userId    Int
+  user      User    @relation("ReportVotes", fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Vote type
+  voteType  String  // "helpful", "not_helpful", "spam", "duplicate"
+  
+  // Metadata
+  createdAt DateTime @default(now())
+  
+  // Ensure one vote per user per report
+  @@unique([reportId, userId])
+  @@index([reportId])
+  @@index([userId])
+}
+
+// Report Moderation (audit trail)
+model ReportModeration {
+  id        Int     @id @default(autoincrement())
+  
+  // Reference to report
+  reportId  Int
+  report    Report  @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  
+  // Moderator action
+  action    String  // "flagged", "verified", "rejected", "resolved"
+  reason    String?
+  notes     String?
+  
+  // Moderator
+  moderatorId Int
+  moderator   User    @relation("ReportModerations", fields: [moderatorId], references: [id], onDelete: Cascade)
+  
+  // Metadata
+  createdAt DateTime @default(now())
+  
+  @@index([reportId])
+  @@index([moderatorId])
+  @@index([createdAt])
 }

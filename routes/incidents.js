@@ -4,7 +4,6 @@ const { authenticate, authorize } = require("../middleware/auth");
 
 const router = express.Router();
 
-// Create a new incident (requires authentication)
 router.post("/", authenticate, async (req, res) => {
   try {
     const incident = await IncidentService.createIncident(req.user.id, req.body);
@@ -17,7 +16,6 @@ router.post("/", authenticate, async (req, res) => {
   }
 });
 
-// Get all incidents with filtering and pagination
 router.get("/", async (req, res) => {
   try {
     const { city, type, severity, status, page, limit, sortBy, sortOrder } = req.query;
@@ -39,7 +37,6 @@ router.get("/", async (req, res) => {
   }
 });
 
-// Get incidents by city
 router.get("/city/:city", async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -55,7 +52,6 @@ router.get("/city/:city", async (req, res) => {
   }
 });
 
-// Get nearby incidents
 router.get("/nearby/:latitude/:longitude", async (req, res) => {
   try {
     const { latitude, longitude } = req.params;
@@ -71,7 +67,6 @@ router.get("/nearby/:latitude/:longitude", async (req, res) => {
   }
 });
 
-// Get incident by ID with status history
 router.get("/:id", async (req, res) => {
   try {
     const incident = await IncidentService.getIncidentById(req.params.id);
@@ -81,7 +76,6 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// Update incident (creator or admin only)
 router.patch("/:id", authenticate, async (req, res) => {
   try {
     const updated = await IncidentService.updateIncident(
@@ -101,8 +95,7 @@ router.patch("/:id", authenticate, async (req, res) => {
   }
 });
 
-// Update incident status (admin/moderator only)
-router.patch("/:id/status", authenticate, authorize("admin", "moderator"), async (req, res) => {
+router.patch("/:id/status", authenticate, authorize(["admin", "moderator"]), async (req, res) => {
   try {
     const { status, reason } = req.body;
     if (!status) {
@@ -130,7 +123,6 @@ router.patch("/:id/status", authenticate, authorize("admin", "moderator"), async
   }
 });
 
-// Delete incident (creator or admin only)
 router.delete("/:id", authenticate, async (req, res) => {
   try {
     await IncidentService.deleteIncident(
@@ -149,7 +141,6 @@ router.delete("/:id", authenticate, async (req, res) => {
   }
 });
 
-// Get status history for an incident
 router.get("/:id/history", async (req, res) => {
   try {
     const history = await IncidentService.getStatusHistory(parseInt(req.params.id));
@@ -170,7 +161,7 @@ router.get("/statistics/all", async (req, res) => {
   }
 });
 
-// Get recent activity
+
 router.get("/activity/recent", async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 20;
