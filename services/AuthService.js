@@ -1,9 +1,7 @@
 const Joi = require("joi");
 const bcrypt = require("bcryptjs");
-const { PrismaClient } = require("@prisma/client");
+const prisma = require("../utils/prisma");
 const JWTUtils = require("../utils/jwt");
-
-const prisma = new PrismaClient();
 
 class AuthService {
   static async register(userData) {
