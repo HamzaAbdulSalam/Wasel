@@ -102,13 +102,25 @@ router.patch("/:id/status", authenticate, authorize(["admin", "moderator"]), asy
       return res.status(400).json({ message: "Status is required" });
     }
 
-    const result = await IncidentService.updateIncidentStatus(
-      parseInt(req.params.id),
-      req.user.id,
-      req.user.role,
-      status,
-      reason
-    );
+
+    let result;
+    if (status === "verified") {
+      result = await IncidentService.verifyIncident(
+        parseInt(req.params.id),
+        req.user.id,
+        req.user.role,
+        reason
+      );
+    } else {
+      result = await IncidentService.updateIncidentStatus(
+        parseInt(req.params.id),
+        req.user.id,
+        req.user.role,
+        status,
+        reason
+      );
+    }
+
     res.json({
       message: "Incident status updated successfully",
       data: result,
