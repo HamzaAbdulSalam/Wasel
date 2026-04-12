@@ -1,0 +1,236 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model for authentication
+model User {
+  id        Int     @id @default(autoincrement())
+  username  String  @unique
+  email     String  @unique
+  password  String
+  role      String  @default("user")
+  createdAt DateTime @default(now())
+  
+  // Relations
+  incidents     RoadIncident[]
+  statusHistories IncidentStatus[]
+  reports       Report[] @relation("ReportCreator")
+  reportVotes   ReportVote[] @relation("ReportVotes")
+  moderations   ReportModeration[] @relation("ReportModerations")
+  alertSubscriptions AlertSubscription[]
+}
+
+// Road Incident model
+model RoadIncident {
+  id          Int     @id @default(autoincrement())
+  title       String
+  description String
+  type        String  // closure, delay, accident, weather_hazard, etc.
+  severity    String  @default("medium") // low, medium, high, critical
+  status      String  @default("active") // active, verified, resolved, closed
+  
+  // Location data
+  city        String
+  latitude    Decimal @db.Decimal(10, 8)
+  longitude   Decimal @db.Decimal(11, 8)
+  
+  // User who created the incident
+  userId      Int
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Status history
+  statusHistories IncidentStatus[]
+  
+  // Alerts triggered by this incident
+  alerts      Alert[]
+  
+  // Metadata
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([city])
+  @@index([status])
+  @@index([userId])
+}
+
+// Incident Status History for tracking changes
+model IncidentStatus {
+  id          Int     @id @default(autoincrement())
+  
+  // Reference to incident
+  incidentId  Int
+  incident    RoadIncident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  
+  // Status details
+  previousStatus String
+  newStatus      String
+  reason         String?
+  
+  // User who changed the status
+  userId      Int
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Metadata
+  createdAt   DateTime @default(now())
+  
+  @@index([incidentId])
+  @@index([userId])
+}
+
+// Crowdsourced Report model
+model Report {
+  id          Int     @id @default(autoincrement())
+  
+  // Basic info
+  category    String  // traffic_jam, accident, hazard, construction, etc.
+  description String
+  
+  // Location data
+  city        String
+  latitude    Decimal @db.Decimal(10, 8)
+  longitude   Decimal @db.Decimal(11, 8)
+  
+  // Status and credibility
+  status      String  @default("active") // active, verified, flagged, rejected, resolved
+  credibilityScore Float @default(0) // Calculated from votes
+  
+  // User who reported
+  userId      Int
+  user        User    @relation("ReportCreator", fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Relations
+  votes       ReportVote[]
+  moderations ReportModeration[]
+  
+  // Duplicate detection
+  isDuplicate Boolean @default(false)
+  duplicateOf Int?
+  
+  // Metadata
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([city])
+  @@index([status])
+  @@index([userId])
+  @@index([credibilityScore])
+}
+
+// Report Vote (for credibility scoring)
+model ReportVote {
+  id        Int     @id @default(autoincrement())
+  
+  // Reference to report
+  reportId  Int
+  report    Report  @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  
+  // Voter
+  userId    Int
+  user      User    @relation("ReportVotes", fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Vote type
+  voteType  String  // "helpful", "not_helpful", "spam", "duplicate"
+  
+  // Metadata
+  createdAt DateTime @default(now())
+  
+  // Ensure one vote per user per report
+  @@unique([reportId, userId])
+  @@index([reportId])
+  @@index([userId])
+}
+
+// Report Moderation (audit trail)
+model ReportModeration {
+  id        Int     @id @default(autoincrement())
+  
+  // Reference to report
+  reportId  Int
+  report    Report  @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  
+  // Moderator action
+  action    String  // "flagged", "verified", "rejected", "resolved"
+  reason    String?
+  notes     String?
+  
+  // Moderator
+  moderatorId Int
+  moderator   User    @relation("ReportModerations", fields: [moderatorId], references: [id], onDelete: Cascade)
+  
+  // Metadata
+  createdAt DateTime @default(now())
+  
+  @@index([reportId])
+  @@index([moderatorId])
+  @@index([createdAt])
+}
+
+// Alert Subscription model - users subscribe to alerts based on geographic area and incident category
+model AlertSubscription {
+  id          Int     @id @default(autoincrement())
+  
+  // User who subscribed
+  userId      Int
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Subscription criteria
+  geographicArea String  // city name or region
+  incidentCategory String // specific incident type (accident, closure, etc.) or "all"
+  radiusKm      Float?  // optional radius for location-based alerts
+  latitude      Decimal? @db.Decimal(10, 8) // center point for radius-based alerts
+  longitude     Decimal? @db.Decimal(11, 8) // center point for radius-based alerts
+  
+  // Subscription settings
+  isActive     Boolean @default(true)
+  notificationMethod String @default("in_app") // in_app, email, push (for future integration)
+  
+  // Metadata
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  // Relations
+  alerts       Alert[]
+  
+  @@index([userId])
+  @@index([geographicArea])
+  @@index([incidentCategory])
+  @@index([isActive])
+}
+
+// Alert model - records triggered alerts for users
+model Alert {
+  id          Int     @id @default(autoincrement())
+  
+  // Reference to subscription that triggered this alert
+  subscriptionId Int
+  subscription   AlertSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  
+  // Reference to the incident that triggered the alert
+  incidentId  Int
+  incident    RoadIncident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  
+  // Alert details
+  title       String
+  message     String
+  priority    String @default("normal") // low, normal, high, critical
+  
+  // Notification status
+  isRead      Boolean @default(false)
+  sentAt      DateTime? // when notification was sent (for external services)
+  
+  // Metadata
+  createdAt   DateTime @default(now())
+  
+  @@index([subscriptionId])
+  @@index([incidentId])
+  @@index([isRead])
+  @@index([createdAt])
+}

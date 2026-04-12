@@ -1,5 +1,6 @@
 const express = require("express");
 const authRoutes = require("./routes/auth");
+<<<<<<< HEAD
 
 let updatesRoutes;
 try {
@@ -7,6 +8,13 @@ try {
 } catch (error) {
   console.error("Error loading updates routes:", error.message);
 }
+=======
+const incidentsRoutes = require("./routes/incidents");
+const reportsRoutes = require("./routes/reports");
+const routesRoutes = require("./routes/routes");
+const alertsRoutes = require("./routes/alerts");
+const prisma = require("./utils/prisma");
+>>>>>>> c23c931 (Add alerts and regional notifications feature)
 
 const app = express();
 
@@ -15,6 +23,7 @@ app.use(express.json());
 
 // Routes
 app.use("/auth", authRoutes);
+<<<<<<< HEAD
 if (updatesRoutes) {
   app.use("/updates", updatesRoutes);
   console.log("Updates routes loaded");
@@ -25,6 +34,12 @@ if (updatesRoutes) {
     res.json({ message: "Test route working" });
   });
 }
+=======
+app.use("/incidents", incidentsRoutes);
+app.use("/reports", reportsRoutes);
+app.use("/routes", routesRoutes);
+app.use("/alerts", alertsRoutes);
+>>>>>>> c23c931 (Add alerts and regional notifications feature)
 
 app.get("/", (req, res) => {
   res.send("Hello, World!");
