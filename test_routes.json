@@ -1,0 +1,9 @@
+{
+  "startLatitude": 24.7136,
+  "startLongitude": 46.6753,
+  "endLatitude": 24.8248,
+  "endLongitude": 46.8859,
+  "roadType": "standard",
+  "congestion": "normal",
+  "includeHazards": true
+}

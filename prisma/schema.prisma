@@ -25,7 +25,9 @@ model User {
   reports       Report[] @relation("ReportCreator")
   reportVotes   ReportVote[] @relation("ReportVotes")
   moderations   ReportModeration[] @relation("ReportModerations")
+
   alertSubscriptions AlertSubscription[]
+
 }
 
 // Road Incident model
@@ -49,9 +51,10 @@ model RoadIncident {
   // Status history
   statusHistories IncidentStatus[]
   
+
   // Alerts triggered by this incident
   alerts      Alert[]
-  
+
   // Metadata
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -234,3 +237,4 @@ model Alert {
   @@index([isRead])
   @@index([createdAt])
 }
+

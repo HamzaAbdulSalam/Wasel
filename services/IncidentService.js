@@ -1,6 +1,8 @@
 const IncidentRepository = require("../repos/IncidentRepository");
 const IncidentStatusRepository = require("../repos/IncidentStatusRepository");
+
 const AlertService = require("./AlertService");
+
 const RoadIncident = require("../models/RoadIncident");
 const IncidentStatus = require("../models/IncidentStatus");
 const Joi = require("joi");
@@ -131,6 +133,7 @@ class IncidentService {
       throw new Error("Unauthorized: Only admin/moderator can verify");
     }
 
+
     const result = await this.updateIncidentStatus(id, userId, userRole, "verified", reason || "Verified by moderator");
 
     // Trigger alerts for the verified incident
@@ -142,6 +145,8 @@ class IncidentService {
     }
 
     return result;
+
+
   }
 
   // Close incident (admin only)
