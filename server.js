@@ -1,13 +1,8 @@
+require("dotenv").config();
+
 const express = require("express");
 const authRoutes = require("./routes/auth");
-
-
-let updatesRoutes;
-try {
-  updatesRoutes = require("./routes/updates");
-} catch (error) {
-  console.error("Error loading updates routes:", error.message);
-}
+const updatesRoutes = require("./routes/updates");
 
 const incidentsRoutes = require("./routes/incidents");
 const reportsRoutes = require("./routes/reports");
@@ -22,27 +17,21 @@ const app = express();
 app.use(express.json());
 
 // Database connection verification
-prisma
-  .$connect()
-  .then(() => console.log("✓ Database connected"))
-  .catch((err) => {
-    console.error("✗ Database connection failed:", err.message);
-    process.exit(1);
-  });
+if (process.env.DATABASE_URL) {
+  prisma
+    .$connect()
+    .then(() => console.log("✓ Database connected"))
+    .catch((err) => {
+      console.error("✗ Database connection failed:", err.message);
+    });
+} else {
+  console.warn("DATABASE_URL is not set; skipping database connection check");
+}
 
 // Routes
 app.use("/auth", authRoutes);
-
-if (updatesRoutes) {
-  app.use("/updates", updatesRoutes);
-  console.log("Updates routes loaded");
-} else {
-  console.log("Updates routes not loaded");
-  // Add a test route
-  app.get("/updates/test", (req, res) => {
-    res.json({ message: "Test route working" });
-  });
-}
+app.use("/updates", updatesRoutes);
+console.log("Updates routes loaded");
 
 app.use("/incidents", incidentsRoutes);
 app.use("/reports", reportsRoutes);
