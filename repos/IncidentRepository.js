@@ -140,11 +140,12 @@ class IncidentRepository {
     };
   }
 
-  // Get active incidents near coordinates (within 10km)
-  async findNearby(latitude, longitude, radiusKm = 10) {
+  // Get active incidents near coordinates (within 10km) with pagination
+  async findNearby(latitude, longitude, radiusKm = 10, page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
     // Simple distance calculation using Haversine formula
     // In production, use PostGIS for better performance
-    return await prisma.$queryRaw`
+    const results = await prisma.$queryRaw`
       SELECT 
         id, title, description, type, severity, status,
         city, latitude, longitude, "userId", "createdAt", "updatedAt",
@@ -157,7 +158,30 @@ class IncidentRepository {
       COS(RADIANS(${latitude})) * COS(RADIANS(latitude)) * POWER(SIN(RADIANS(longitude - ${longitude}) / 2), 2))))
       <= ${radiusKm}
       ORDER BY distance ASC
+      LIMIT ${limit}
+      OFFSET ${skip}
     `;
+
+    const countResult = await prisma.$queryRaw`
+      SELECT COUNT(*) as count
+      FROM "RoadIncident"
+      WHERE status = 'active'
+      AND (6371 * 2 * ASIN(SQRT(POWER(SIN(RADIANS(latitude - ${latitude}) / 2), 2) +
+      COS(RADIANS(${latitude})) * COS(RADIANS(latitude)) * POWER(SIN(RADIANS(longitude - ${longitude}) / 2), 2))))
+      <= ${radiusKm}
+    `;
+
+    const total = countResult[0]?.count || 0;
+
+    return {
+      data: results,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+      },
+    };
   }
 
   // Update incident
