@@ -66,8 +66,8 @@ class IncidentService {
   }
 
   // Get nearby incidents
-  async getNearbyIncidents(latitude, longitude, radiusKm = 10) {
-    const nearby = await IncidentRepository.findNearby(latitude, longitude, radiusKm);
+  async getNearbyIncidents(latitude, longitude, radiusKm = 10, page = 1, limit = 10) {
+    const nearby = await IncidentRepository.findNearby(latitude, longitude, radiusKm, page, limit);
     return nearby;
   }
 
@@ -183,8 +183,8 @@ class IncidentService {
   }
 
   // Get status history
-  async getStatusHistory(incidentId) {
-    return await IncidentStatusRepository.findByIncidentId(incidentId);
+  async getStatusHistory(incidentId, page = 1, limit = 10) {
+    return await IncidentStatusRepository.findByIncidentId(incidentId, page, limit);
   }
 
   // Get statistics
@@ -193,8 +193,8 @@ class IncidentService {
   }
 
   // Get recent activity
-  async getRecentActivity(limit = 20) {
-    return await IncidentStatusRepository.getRecentChanges(limit);
+  async getRecentActivity(page = 1, limit = 20) {
+    return await IncidentStatusRepository.getRecentChanges(page, limit);
   }
 }
 

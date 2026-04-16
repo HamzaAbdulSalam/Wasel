@@ -56,12 +56,16 @@ router.get("/nearby/:latitude/:longitude", async (req, res) => {
   try {
     const { latitude, longitude } = req.params;
     const radiusKm = req.query.radius || 10;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
     const nearby = await IncidentService.getNearbyIncidents(
       parseFloat(latitude),
       parseFloat(longitude),
-      parseFloat(radiusKm)
+      parseFloat(radiusKm),
+      page,
+      limit
     );
-    res.json({ data: nearby });
+    res.json(nearby);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -155,8 +159,14 @@ router.delete("/:id", authenticate, async (req, res) => {
 
 router.get("/:id/history", async (req, res) => {
   try {
-    const history = await IncidentService.getStatusHistory(parseInt(req.params.id));
-    res.json({ data: history });
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const history = await IncidentService.getStatusHistory(
+      parseInt(req.params.id),
+      page,
+      limit
+    );
+    res.json(history);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -176,9 +186,10 @@ router.get("/statistics/all", async (req, res) => {
 
 router.get("/activity/recent", async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
-    const activity = await IncidentService.getRecentActivity(limit);
-    res.json({ data: activity });
+    const activity = await IncidentService.getRecentActivity(page, limit);
+    res.json(activity);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
