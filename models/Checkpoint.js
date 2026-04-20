@@ -8,5 +8,4 @@ class Checkpoint {
     this.createdAt = createdAt;
   }
 }
-
 module.exports = Checkpoint;

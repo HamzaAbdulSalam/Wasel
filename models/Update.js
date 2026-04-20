@@ -21,5 +21,4 @@ class Update {
     this.createdAt = createdAt;
   }
 }
-
 module.exports = Update;

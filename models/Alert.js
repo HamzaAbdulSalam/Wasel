@@ -12,7 +12,6 @@ class Alert {
     this.subscription = data.subscription;
     this.incident = data.incident;
   }
-
   isValid() {
     return (
       this.subscriptionId &&
@@ -21,16 +20,11 @@ class Alert {
       this.message
     );
   }
-
-  // Mark alert as read
   markAsRead() {
     this.isRead = true;
   }
-
-  // Mark alert as sent (for external notifications)
   markAsSent() {
     this.sentAt = new Date();
   }
 }
-
 module.exports = Alert;
