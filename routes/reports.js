@@ -4,10 +4,7 @@ const DuplicateDetectionService = require("../services/DuplicateDetectionService
 const ReportModerationService = require("../services/ReportModerationService");
 const CredibilityService = require("../services/CredibilityService");
 const { authenticate, authorize } = require("../middleware/auth");
-
 const router = express.Router();
-
-
 router.get("/stats/report", async (req, res) => {
   try {
     const { city } = req.query;
@@ -17,8 +14,6 @@ router.get("/stats/report", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
-
-
 router.get("/admin/duplicates/groups", authenticate, authorize(["admin", "moderator"]), async (req, res) => {
   try {
     const { city } = req.query;
@@ -31,7 +26,6 @@ router.get("/admin/duplicates/groups", authenticate, authorize(["admin", "modera
     res.status(500).json({ message: error.message });
   }
 });
-
 router.get("/admin/pending/moderations", authenticate, authorize(["admin", "moderator"]), async (req, res) => {
   try {
     const { city, category, page, limit, sortBy, sortOrder } = req.query;
@@ -48,7 +42,6 @@ router.get("/admin/pending/moderations", authenticate, authorize(["admin", "mode
     res.status(500).json({ message: error.message });
   }
 });
-
 router.get("/admin/moderations", authenticate, authorize(["admin", "moderator"]), async (req, res) => {
   try {
     const { action, startDate, endDate, page, limit } = req.query;
@@ -67,7 +60,6 @@ router.get("/admin/moderations", authenticate, authorize(["admin", "moderator"])
     res.status(500).json({ message: error.message });
   }
 });
-
 router.get("/admin/moderation-stats", authenticate, authorize(["admin", "moderator"]), async (req, res) => {
   try {
     const { startDate, endDate, city } = req.query;
@@ -81,15 +73,12 @@ router.get("/admin/moderation-stats", authenticate, authorize(["admin", "moderat
     res.status(500).json({ message: error.message });
   }
 });
-
 router.post("/admin/bulk-moderate", authenticate, authorize(["admin", "moderator"]), async (req, res) => {
   try {
     const { reportIds, action, reason, notes } = req.body;
-
     if (!reportIds || !Array.isArray(reportIds) || reportIds.length === 0) {
       return res.status(400).json({ message: "reportIds must be a non-empty array" });
     }
-
     const result = await ReportModerationService.bulkModerateReports(
       reportIds,
       req.user.id,
@@ -99,7 +88,6 @@ router.post("/admin/bulk-moderate", authenticate, authorize(["admin", "moderator
         notes,
       }
     );
-
     res.json({
       message: "Bulk moderation completed",
       data: result,
@@ -108,8 +96,6 @@ router.post("/admin/bulk-moderate", authenticate, authorize(["admin", "moderator
     res.status(400).json({ message: error.message });
   }
 });
-
-
 router.get("/ranked/helpful", async (req, res) => {
   try {
     const { city, category, limit } = req.query;
@@ -123,7 +109,6 @@ router.get("/ranked/helpful", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
-
 router.get("/ranked/trending", async (req, res) => {
   try {
     const { city, category, hours, limit } = req.query;
@@ -138,8 +123,6 @@ router.get("/ranked/trending", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
-
-
 router.get("/city/:city", async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -150,7 +133,6 @@ router.get("/city/:city", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
-
 router.get("/category/:category", async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -165,7 +147,6 @@ router.get("/category/:category", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
-
 router.get("/nearby/:latitude/:longitude", async (req, res) => {
   try {
     const { latitude, longitude } = req.params;
@@ -180,25 +161,20 @@ router.get("/nearby/:latitude/:longitude", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
-
-
 router.post("/", authenticate, async (req, res) => {
   try {
     const report = await ReportService.createReport(req.user.id, req.body);
-    
     const potentialDuplicates = await DuplicateDetectionService.findPotentialDuplicates(report);
-
     res.status(201).json({
       message: "Report created successfully",
       data: report,
-      potentialDuplicates: potentialDuplicates.slice(0, 3), // Top 3 potential duplicates
+      potentialDuplicates: potentialDuplicates.slice(0, 3),
       duplicateDetected: potentialDuplicates.length > 0,
     });
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
 });
-
 router.get("/", async (req, res) => {
   try {
     const { city, category, status, page, limit, sortBy, sortOrder } = req.query;
@@ -211,20 +187,16 @@ router.get("/", async (req, res) => {
       sortBy: sortBy || "createdAt",
       sortOrder: sortOrder || "desc",
     };
-
     const result = await ReportService.getAllReports(filters);
     res.json(result);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
-
-
 router.get("/:id", async (req, res) => {
   try {
     const report = await ReportService.getReportById(req.params.id);
     const voteStats = await CredibilityService.getVoteStatistics(report.id);
-
     res.json({
       data: report,
       voteStatistics: voteStats,
@@ -233,12 +205,10 @@ router.get("/:id", async (req, res) => {
     res.status(404).json({ message: error.message });
   }
 });
-
 router.post("/:id/vote", authenticate, async (req, res) => {
   try {
     const { voteType } = req.body;
     const result = await CredibilityService.submitVote(req.params.id, req.user.id, voteType);
-
     res.json({
       message: result.message,
       data: result.vote,
@@ -248,7 +218,6 @@ router.post("/:id/vote", authenticate, async (req, res) => {
     res.status(statusCode).json({ message: error.message });
   }
 });
-
 router.get("/:id/votes", async (req, res) => {
   try {
     const stats = await CredibilityService.getVoteStatistics(req.params.id);
@@ -257,7 +226,6 @@ router.get("/:id/votes", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
-
 router.get("/user/:userId/votes", async (req, res) => {
   try {
     const { page, limit, voteType } = req.query;
@@ -271,7 +239,6 @@ router.get("/user/:userId/votes", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
-
 router.get("/:id/duplicates", async (req, res) => {
   try {
     const duplicates = await DuplicateDetectionService.getDuplicateDetails(req.params.id);
@@ -282,19 +249,16 @@ router.get("/:id/duplicates", async (req, res) => {
     });
   }
 });
-
 router.post("/:id/merge-duplicate", authenticate, authorize(["admin", "moderator"]), async (req, res) => {
   try {
     const { mainReportId } = req.body;
     if (!mainReportId) {
       return res.status(400).json({ message: "mainReportId is required" });
     }
-
     const result = await DuplicateDetectionService.mergeDuplicates(
       req.params.id,
       mainReportId
     );
-
     res.json({
       message: "Report marked as duplicate successfully",
       data: result,
@@ -303,11 +267,9 @@ router.post("/:id/merge-duplicate", authenticate, authorize(["admin", "moderator
     res.status(400).json({ message: error.message });
   }
 });
-
 router.post("/:id/moderate", authenticate, authorize(["admin", "moderator"]), async (req, res) => {
   try {
     const { action, reason, notes } = req.body;
-
     const moderation = await ReportModerationService.recordModerationAction(
       req.params.id,
       req.user.id,
@@ -317,7 +279,6 @@ router.post("/:id/moderate", authenticate, authorize(["admin", "moderator"]), as
         notes,
       }
     );
-
     res.json({
       message: "Moderation action recorded successfully",
       data: moderation,
@@ -326,7 +287,6 @@ router.post("/:id/moderate", authenticate, authorize(["admin", "moderator"]), as
     res.status(400).json({ message: error.message });
   }
 });
-
 router.get("/:id/moderation-history", authenticate, authorize(["admin", "moderator"]), async (req, res) => {
   try {
     const history = await ReportModerationService.getModerationHistory(req.params.id);
@@ -337,6 +297,4 @@ router.get("/:id/moderation-history", authenticate, authorize(["admin", "moderat
     });
   }
 });
-
 module.exports = router;
-

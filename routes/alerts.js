@@ -1,13 +1,8 @@
 const express = require("express");
 const AlertService = require("../services/AlertService");
 const { authenticate } = require("../middleware/auth");
-
 const router = express.Router();
-
-// All routes require authentication
 router.use(authenticate);
-
-// Create alert subscription
 router.post("/subscriptions", async (req, res) => {
   try {
     const subscription = await AlertService.createSubscription(req.user.id, req.body);
@@ -19,21 +14,19 @@ router.post("/subscriptions", async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 });
-
-// Get user's alert subscriptions
 router.get("/subscriptions", async (req, res) => {
   try {
-    const subscriptions = await AlertService.getUserSubscriptions(req.user.id);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const result = await AlertService.getUserSubscriptions(req.user.id, page, limit);
     res.json({
       message: "Subscriptions retrieved successfully",
-      data: subscriptions,
+      data: result,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
-
-// Update alert subscription
 router.put("/subscriptions/:id", async (req, res) => {
   try {
     const subscription = await AlertService.updateSubscription(
@@ -49,8 +42,6 @@ router.put("/subscriptions/:id", async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 });
-
-// Delete alert subscription
 router.delete("/subscriptions/:id", async (req, res) => {
   try {
     await AlertService.deleteSubscription(req.params.id, req.user.id);
@@ -59,8 +50,6 @@ router.delete("/subscriptions/:id", async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 });
-
-// Deactivate alert subscription
 router.patch("/subscriptions/:id/deactivate", async (req, res) => {
   try {
     const subscription = await AlertService.deactivateSubscription(req.params.id, req.user.id);
@@ -72,8 +61,6 @@ router.patch("/subscriptions/:id/deactivate", async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 });
-
-// Get user's alerts
 router.get("/", async (req, res) => {
   try {
     const { page, limit, isRead } = req.query;
@@ -82,7 +69,6 @@ router.get("/", async (req, res) => {
       limit: parseInt(limit) || 10,
       isRead: isRead === "true" ? true : isRead === "false" ? false : undefined,
     };
-
     const result = await AlertService.getUserAlerts(req.user.id, options);
     res.json({
       message: "Alerts retrieved successfully",
@@ -92,8 +78,6 @@ router.get("/", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
-
-// Mark alert as read
 router.patch("/:id/read", async (req, res) => {
   try {
     const alert = await AlertService.markAlertAsRead(req.params.id, req.user.id);
@@ -105,8 +89,6 @@ router.patch("/:id/read", async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 });
-
-// Get unread alert count
 router.get("/unread/count", async (req, res) => {
   try {
     const count = await AlertService.getUnreadAlertCount(req.user.id);
@@ -118,5 +100,4 @@ router.get("/unread/count", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
-
 module.exports = router;

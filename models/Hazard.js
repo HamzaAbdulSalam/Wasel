@@ -6,5 +6,4 @@ class Hazard {
     this.createdAt = createdAt;
   }
 }
-
 module.exports = Hazard;
