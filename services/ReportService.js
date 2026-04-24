@@ -1,14 +1,10 @@
 const Joi = require("joi");
 const prisma = require("../utils/prisma");
-
-// Constants for abuse prevention
-const REPORT_RATE_LIMIT = 10; // Max reports per user
+const REPORT_RATE_LIMIT = 10;
 const RATE_LIMIT_WINDOW = 3600000; // 1 hour in milliseconds
 const MIN_DESCRIPTION_LENGTH = 10;
 const MAX_DESCRIPTION_LENGTH = 1000;
-
 class ReportService {
-  // Validation schema for report creation
   static getValidationSchema() {
     return Joi.object({
       category: Joi.string()
@@ -23,8 +19,6 @@ class ReportService {
       longitude: Joi.number().min(-180).max(180).required(),
     });
   }
-
-  // Check for spam/inappropriate content
   static containsSpam(description) {
     const spamKeywords = [
       "click here",
@@ -39,11 +33,8 @@ class ReportService {
     const lowerDesc = description.toLowerCase();
     return spamKeywords.some((keyword) => lowerDesc.includes(keyword));
   }
-
-  // Check rate limiting
   static async checkRateLimit(userId) {
     const oneHourAgo = new Date(Date.now() - RATE_LIMIT_WINDOW);
-
     const reportsCount = await prisma.report.count({
       where: {
         userId: userId,
@@ -52,30 +43,20 @@ class ReportService {
         },
       },
     });
-
     if (reportsCount >= REPORT_RATE_LIMIT) {
       throw new Error(
         `Rate limit exceeded. Maximum ${REPORT_RATE_LIMIT} reports per hour allowed.`
       );
     }
   }
-
-  // Create a new report with validation and abuse prevention
   static async createReport(userId, reportData) {
-    // Validate input
     const schema = this.getValidationSchema();
     const { error, value } = schema.validate(reportData);
     if (error) throw new Error(error.details[0].message);
-
-    // Check rate limiting
     await this.checkRateLimit(userId);
-
-    // Check for spam
     if (this.containsSpam(value.description)) {
       throw new Error("Report contains spam or malicious content. Please revise.");
     }
-
-    // Create the report
     const report = await prisma.report.create({
       data: {
         category: value.category,
@@ -95,11 +76,8 @@ class ReportService {
         },
       },
     });
-
     return report;
   }
-
-  // Get all reports with filters and pagination
   static async getAllReports(filters = {}) {
     const {
       city,
@@ -110,14 +88,11 @@ class ReportService {
       sortBy = "createdAt",
       sortOrder = "desc",
     } = filters;
-
     const where = {};
     if (city) where.city = city;
     if (category) where.category = category;
     if (status) where.status = status;
-
     const skip = (page - 1) * limit;
-
     const [reports, total] = await Promise.all([
       prisma.report.findMany({
         where,
@@ -144,7 +119,6 @@ class ReportService {
       }),
       prisma.report.count({ where }),
     ]);
-
     return {
       data: reports,
       pagination: {
@@ -155,8 +129,6 @@ class ReportService {
       },
     };
   }
-
-  // Get reports by city
   static async getReportsByCity(city, page = 1, limit = 10) {
     return this.getAllReports({
       city,
@@ -165,8 +137,6 @@ class ReportService {
       status: "active",
     });
   }
-
-  // Get reports by category
   static async getReportsByCategory(category, page = 1, limit = 10) {
     return this.getAllReports({
       category,
@@ -175,13 +145,7 @@ class ReportService {
       status: "active",
     });
   }
-
-  // Get nearby reports based on coordinates and radius
   static async getNearbyReports(latitude, longitude, radiusKm = 10) {
-    // PostgreSQL has native geometry support, but for basic distance calculation:
-    // Using Haversine formula approximation via raw query or client-side filtering
-    // For simplicity, we'll fetch reports in the same city and filter geographically
-
     const reports = await prisma.report.findMany({
       where: {
         status: "active",
@@ -201,8 +165,6 @@ class ReportService {
       },
       take: 100,
     });
-
-    // Filter by distance using Haversine formula
     const nearbyReports = reports.filter((report) => {
       const distance = this.calculateDistance(
         latitude,
@@ -212,14 +174,11 @@ class ReportService {
       );
       return distance <= radiusKm;
     });
-
     return {
       data: nearbyReports,
       count: nearbyReports.length,
     };
   }
-
-  // Calculate distance between two coordinates (Haversine formula)
   static calculateDistance(lat1, lon1, lat2, lon2) {
     const R = 6371; // Earth's radius in km
     const dLat = ((lat2 - lat1) * Math.PI) / 180;
@@ -233,8 +192,6 @@ class ReportService {
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   }
-
-  // Get a single report
   static async getReportById(id) {
     const report = await prisma.report.findUnique({
       where: { id: parseInt(id) },
@@ -271,33 +228,24 @@ class ReportService {
         },
       },
     });
-
     if (!report) {
       throw new Error("Report not found");
     }
-
     return report;
   }
-
-  // Update report status (for admin/moderator use)
   static async updateReportStatus(reportId, newStatus, reason = null) {
     const validStatuses = ["active", "verified", "flagged", "rejected", "resolved"];
-
     if (!validStatuses.includes(newStatus)) {
       throw new Error("Invalid status");
     }
-
     const report = await prisma.report.update({
       where: { id: parseInt(reportId) },
       data: {
         status: newStatus,
       },
     });
-
     return report;
   }
-
-  // Mark report as duplicate
   static async markAsDuplicate(reportId, duplicateOfId) {
     const report = await prisma.report.update({
       where: { id: parseInt(reportId) },
@@ -306,22 +254,16 @@ class ReportService {
         duplicateOf: parseInt(duplicateOfId),
       },
     });
-
     return report;
   }
-
-  // Get report statistics
   static async getReportStats(city = null) {
     const where = city ? { city } : {};
-
     const stats = await prisma.report.groupBy({
       by: ["category", "status"],
       where,
       _count: true,
     });
-
     return stats;
   }
 }
-
 module.exports = ReportService;

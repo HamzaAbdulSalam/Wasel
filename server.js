@@ -1,13 +1,13 @@
+require("dotenv").config();
 const express = require("express");
 const authRoutes = require("./routes/auth");
+const updatesRoutes = require("./routes/updates");
 const incidentsRoutes = require("./routes/incidents");
 const reportsRoutes = require("./routes/reports");
 const routesRoutes = require("./routes/routes");
+const alertsRoutes = require("./routes/alerts");
 const prisma = require("./utils/prisma");
-
 const app = express();
-
-// Middleware
 app.use(express.json());
 if (process.env.DATABASE_URL) {
   prisma
@@ -36,7 +36,6 @@ app.get("/", (req, res) => {
     docs: "/api/v1",
   });
 });
-
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

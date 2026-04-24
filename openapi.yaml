@@ -1,0 +1,1375 @@
+openapi: 3.0.0
+info:
+  title: Wasel - Smart Mobility & Checkpoint Intelligence Platform API
+  version: 1.0.0
+  description: API documentation for Wasel Palestine platform
+  contact:
+    name: Wasel Support
+    email: support@wasel.ps
+  license:
+    name: ISC
+    url: https://opensource.org/licenses/ISC
+
+servers:
+  - url: http://localhost:3000
+    description: Development server
+  - url: http://api.wasel.local:3000
+    description: Staging server
+  - url: https://api.wasel.ps
+    description: Production server
+
+components:
+  securitySchemes:
+    BearerToken:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token required for authenticated endpoints. Format - Authorization Header - Bearer {token}
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        name:
+          type: string
+          example: John Doe
+        role:
+          type: string
+          enum: [user, moderator, admin]
+          example: user
+        createdAt:
+          type: string
+          format: date-time
+          example: 2024-01-15T10:30:00Z
+
+    AuthResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Login successful
+        token:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        user:
+          $ref: "#/components/schemas/User"
+
+    Incident:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        title:
+          type: string
+          example: Road accident on Main Street
+        description:
+          type: string
+          example: Two vehicle collision causing traffic jam
+        type:
+          type: string
+          enum: [accident, congestion, hazard, checkpoint, weather]
+          example: accident
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+          example: high
+        status:
+          type: string
+          enum: [active, resolved, archived]
+          example: active
+        latitude:
+          type: number
+          format: double
+          example: 31.9454
+        longitude:
+          type: number
+          format: double
+          example: 35.2075
+        city:
+          type: string
+          example: Ramallah
+        createdBy:
+          type: integer
+          example: 1
+        createdAt:
+          type: string
+          format: date-time
+          example: 2024-01-15T10:30:00Z
+        updatedAt:
+          type: string
+          format: date-time
+          example: 2024-01-15T10:35:00Z
+
+    Alert:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        userId:
+          type: integer
+          example: 1
+        incidentId:
+          type: integer
+          example: 1
+        type:
+          type: string
+          example: accident
+        status:
+          type: string
+          enum: [active, resolved, dismissed]
+          example: active
+        createdAt:
+          type: string
+          format: date-time
+          example: 2024-01-15T10:30:00Z
+
+    AlertSubscription:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        userId:
+          type: integer
+          example: 1
+        incidentTypes:
+          type: array
+          items:
+            type: string
+          example: [accident, congestion, hazard]
+        cities:
+          type: array
+          items:
+            type: string
+          example: [Ramallah, Bethlehem, Jerusalem]
+        radiusKm:
+          type: number
+          example: 10
+        isActive:
+          type: boolean
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+          example: 2024-01-15T10:30:00Z
+
+    Report:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        incidentId:
+          type: integer
+          example: 1
+        userId:
+          type: integer
+          example: 1
+        credibility:
+          type: number
+          example: 0.95
+        helpfulCount:
+          type: integer
+          example: 25
+        photos:
+          type: array
+          items:
+            type: string
+          example: ["https://example.com/photo1.jpg"]
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+          example: approved
+        createdAt:
+          type: string
+          format: date-time
+          example: 2024-01-15T10:30:00Z
+
+    Update:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        incidentId:
+          type: integer
+          example: 1
+        userId:
+          type: integer
+          example: 1
+        content:
+          type: string
+          example: Traffic has been cleared, incident resolved
+        status:
+          type: string
+          enum: [active, resolved]
+          example: active
+        createdAt:
+          type: string
+          format: date-time
+          example: 2024-01-15T10:30:00Z
+
+    RouteEstimate:
+      type: object
+      properties:
+        estimatedTime:
+          type: number
+          example: 45
+        estimatedDistance:
+          type: number
+          example: 25.5
+        routeType:
+          type: string
+          example: fastest
+        hazardCount:
+          type: integer
+          example: 3
+        hazards:
+          type: array
+          items:
+            $ref: "#/components/schemas/Incident"
+
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Error message
+        success:
+          type: boolean
+          example: false
+        details:
+          type: string
+          example: Additional error details
+
+    PaginatedResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items: {}
+        total:
+          type: integer
+          example: 100
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 10
+        totalPages:
+          type: integer
+          example: 10
+
+paths:
+  /auth/register:
+    post:
+      summary: Register a new user
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+                - name
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: newuser@example.com
+                password:
+                  type: string
+                  format: password
+                  example: SecurePassword123!
+                name:
+                  type: string
+                  example: John Doe
+      responses:
+        "201":
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: User registered successfully
+                  user:
+                    $ref: "#/components/schemas/User"
+        "400":
+          description: Invalid input or user already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/login:
+    post:
+      summary: Login user
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+                password:
+                  type: string
+                  format: password
+                  example: SecurePassword123!
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/profile:
+    get:
+      summary: Get user profile
+      tags:
+        - Authentication
+      security:
+        - BearerToken: []
+      responses:
+        "200":
+          description: Profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: "#/components/schemas/User"
+        "401":
+          description: Unauthorized - no valid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /incidents:
+    post:
+      summary: Create a new incident
+      tags:
+        - Incidents
+      security:
+        - BearerToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - type
+                - latitude
+                - longitude
+                - city
+              properties:
+                title:
+                  type: string
+                  example: Road accident
+                description:
+                  type: string
+                  example: Two vehicle collision
+                type:
+                  type: string
+                  enum: [accident, congestion, hazard, checkpoint, weather]
+                  example: accident
+                severity:
+                  type: string
+                  enum: [low, medium, high, critical]
+                  example: high
+                latitude:
+                  type: number
+                  example: 31.9454
+                longitude:
+                  type: number
+                  example: 35.2075
+                city:
+                  type: string
+                  example: Ramallah
+      responses:
+        "201":
+          description: Incident created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    $ref: "#/components/schemas/Incident"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    get:
+      summary: Get all incidents with filters
+      tags:
+        - Incidents
+      parameters:
+        - name: city
+          in: query
+          schema:
+            type: string
+          example: Ramallah
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [accident, congestion, hazard, checkpoint, weather]
+        - name: severity
+          in: query
+          schema:
+            type: string
+            enum: [low, medium, high, critical]
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, resolved, archived]
+          example: active
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+          example: createdAt
+        - name: sortOrder
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+          example: desc
+      responses:
+        "200":
+          description: Incidents retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /incidents/city/{city}:
+    get:
+      summary: Get incidents by city
+      tags:
+        - Incidents
+      parameters:
+        - name: city
+          in: path
+          required: true
+          schema:
+            type: string
+          example: Ramallah
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        "200":
+          description: Incidents retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /incidents/nearby/{latitude}/{longitude}:
+    get:
+      summary: Get nearby incidents
+      tags:
+        - Incidents
+      parameters:
+        - name: latitude
+          in: path
+          required: true
+          schema:
+            type: number
+          example: 31.9454
+        - name: longitude
+          in: path
+          required: true
+          schema:
+            type: number
+          example: 35.2075
+        - name: radius
+          in: query
+          schema:
+            type: number
+          example: 10
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        "200":
+          description: Nearby incidents retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /incidents/{id}:
+    get:
+      summary: Get incident by ID
+      tags:
+        - Incidents
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      responses:
+        "200":
+          description: Incident retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Incident"
+        "404":
+          description: Incident not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    patch:
+      summary: Update incident
+      tags:
+        - Incidents
+      security:
+        - BearerToken: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                severity:
+                  type: string
+                  enum: [low, medium, high, critical]
+                latitude:
+                  type: number
+                longitude:
+                  type: number
+      responses:
+        "200":
+          description: Incident updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    $ref: "#/components/schemas/Incident"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /incidents/{id}/status:
+    patch:
+      summary: Update incident status (Admin/Moderator only)
+      tags:
+        - Incidents
+      security:
+        - BearerToken: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum: [verified, rejected, resolved]
+                  example: verified
+                reason:
+                  type: string
+                  example: Incident verified by patrol units
+      responses:
+        "200":
+          description: Status updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    $ref: "#/components/schemas/Incident"
+        "400":
+          description: Invalid status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden - requires admin/moderator role
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /alerts/subscriptions:
+    post:
+      summary: Create alert subscription
+      tags:
+        - Alerts
+      security:
+        - BearerToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                incidentTypes:
+                  type: array
+                  items:
+                    type: string
+                  example: [accident, congestion]
+                cities:
+                  type: array
+                  items:
+                    type: string
+                  example: [Ramallah, Bethlehem]
+                radiusKm:
+                  type: number
+                  example: 10
+      responses:
+        "201":
+          description: Subscription created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    $ref: "#/components/schemas/AlertSubscription"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    get:
+      summary: Get user alert subscriptions
+      tags:
+        - Alerts
+      security:
+        - BearerToken: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        "200":
+          description: Subscriptions retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    $ref: "#/components/schemas/PaginatedResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /alerts/subscriptions/{id}:
+    put:
+      summary: Update alert subscription
+      tags:
+        - Alerts
+      security:
+        - BearerToken: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                incidentTypes:
+                  type: array
+                  items:
+                    type: string
+                cities:
+                  type: array
+                  items:
+                    type: string
+                radiusKm:
+                  type: number
+      responses:
+        "200":
+          description: Subscription updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    $ref: "#/components/schemas/AlertSubscription"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    delete:
+      summary: Delete alert subscription
+      tags:
+        - Alerts
+      security:
+        - BearerToken: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      responses:
+        "200":
+          description: Subscription deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /routes/estimate:
+    post:
+      summary: Estimate route with incident data
+      tags:
+        - Routes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - startLatitude
+                - startLongitude
+                - endLatitude
+                - endLongitude
+              properties:
+                startLatitude:
+                  type: number
+                  example: 31.9454
+                startLongitude:
+                  type: number
+                  example: 35.2075
+                endLatitude:
+                  type: number
+                  example: 31.9454
+                endLongitude:
+                  type: number
+                  example: 35.2075
+                roadType:
+                  type: string
+                  example: highway
+                congestion:
+                  type: string
+                  enum: [low, medium, high]
+                  example: medium
+                includeHazards:
+                  type: boolean
+                  example: true
+      responses:
+        "200":
+          description: Route estimated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    $ref: "#/components/schemas/RouteEstimate"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /updates:
+    post:
+      summary: Create incident update
+      tags:
+        - Updates
+      security:
+        - BearerToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - incidentId
+                - content
+              properties:
+                incidentId:
+                  type: integer
+                  example: 1
+                content:
+                  type: string
+                  example: Traffic has been cleared
+      responses:
+        "201":
+          description: Update created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: "#/components/schemas/Update"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "501":
+          description: Service error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    get:
+      summary: Get all updates
+      tags:
+        - Updates
+      responses:
+        "200":
+          description: Updates retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Update"
+        "501":
+          description: Service error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /updates/city/{city}:
+    get:
+      summary: Get updates by city
+      tags:
+        - Updates
+      parameters:
+        - name: city
+          in: path
+          required: true
+          schema:
+            type: string
+          example: Ramallah
+      responses:
+        "200":
+          description: Updates retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Update"
+        "501":
+          description: Service error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /updates/{id}:
+    get:
+      summary: Get update by ID
+      tags:
+        - Updates
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      responses:
+        "200":
+          description: Update retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: "#/components/schemas/Update"
+        "501":
+          description: Service error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /updates/{id}/status:
+    patch:
+      summary: Update status
+      tags:
+        - Updates
+      security:
+        - BearerToken: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [active, resolved]
+                  example: resolved
+      responses:
+        "200":
+          description: Status updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: "#/components/schemas/Update"
+        "501":
+          description: Service error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /reports/stats/report:
+    get:
+      summary: Get report statistics
+      tags:
+        - Reports
+      parameters:
+        - name: city
+          in: query
+          schema:
+            type: string
+          example: Ramallah
+      responses:
+        "200":
+          description: Statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /reports/admin/duplicates/groups:
+    get:
+      summary: Get duplicate report groups (Admin/Moderator)
+      tags:
+        - Reports
+      security:
+        - BearerToken: []
+      parameters:
+        - name: city
+          in: query
+          schema:
+            type: string
+          example: Ramallah
+      responses:
+        "200":
+          description: Duplicate groups retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  count:
+                    type: integer
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden - requires admin/moderator role
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /reports/admin/pending/moderations:
+    get:
+      summary: Get pending moderations (Admin/Moderator)
+      tags:
+        - Reports
+      security:
+        - BearerToken: []
+      parameters:
+        - name: city
+          in: query
+          schema:
+            type: string
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+        - name: sortOrder
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+      responses:
+        "200":
+          description: Pending moderations retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden - requires admin/moderator role
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /reports/admin/bulk-moderate:
+    post:
+      summary: Bulk moderate reports (Admin/Moderator)
+      tags:
+        - Reports
+      security:
+        - BearerToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - reportIds
+                - action
+              properties:
+                reportIds:
+                  type: array
+                  items:
+                    type: integer
+                  example: [1, 2, 3]
+                action:
+                  type: string
+                  enum: [approve, reject]
+                  example: approve
+                reason:
+                  type: string
+                  example: Reports verified
+                notes:
+                  type: string
+                  example: All photos are clear
+      responses:
+        "200":
+          description: Bulk moderation completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden - requires admin/moderator role
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+tags:
+  - name: Authentication
+    description: User registration, login, and profile management
+  - name: Incidents
+    description: Report, retrieve, and manage road incidents and hazards
+  - name: Alerts
+    description: Subscribe to incident alerts and manage notifications
+  - name: Routes
+    description: Route estimation and optimization
+  - name: Updates
+    description: Incident status updates and comments
+  - name: Reports
+    description: Report validation, moderation, and statistics

@@ -9,7 +9,6 @@ class IncidentStatus {
     this.user = data.user;
     this.createdAt = data.createdAt;
   }
-
   isValid() {
     return (
       this.incidentId &&
@@ -18,7 +17,6 @@ class IncidentStatus {
       this.userId
     );
   }
-
   isStatusTransitionValid() {
     const validTransitions = {
       active: ["verified", "closed"],
@@ -26,9 +24,7 @@ class IncidentStatus {
       resolved: ["closed"],
       closed: [],
     };
-
     return validTransitions[this.previousStatus]?.includes(this.newStatus) ?? false;
   }
 }
-
 module.exports = IncidentStatus;

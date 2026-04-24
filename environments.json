@@ -1,0 +1,110 @@
+{
+  "development": {
+    "base_url": "http://localhost:3000",
+    "timeout": 10000,
+    "variables": {
+      "api_version": "1.0.0",
+      "environment": "development",
+      "debug_mode": true,
+      "default_page_size": 10
+    },
+    "headers": {
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+      "X-API-Version": "1.0"
+    }
+  },
+  "staging": {
+    "base_url": "http://api.wasel.local:3000",
+    "timeout": 30000,
+    "variables": {
+      "api_version": "1.0.0",
+      "environment": "staging",
+      "debug_mode": false,
+      "default_page_size": 10
+    },
+    "headers": {
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+      "X-API-Version": "1.0"
+    }
+  },
+  "production": {
+    "base_url": "https://api.wasel.ps",
+    "timeout": 30000,
+    "variables": {
+      "api_version": "1.0.0",
+      "environment": "production",
+      "debug_mode": false,
+      "default_page_size": 20
+    },
+    "headers": {
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+      "X-API-Version": "1.0"
+    }
+  },
+  "test_users": {
+    "admin": {
+      "email": "admin@example.com",
+      "password": "AdminPassword123!",
+      "role": "admin"
+    },
+    "moderator": {
+      "email": "moderator@example.com",
+      "password": "ModeratorPassword123!",
+      "role": "moderator"
+    },
+    "user": {
+      "email": "user@example.com",
+      "password": "UserPassword123!",
+      "role": "user"
+    }
+  },
+  "test_locations": {
+    "ramallah": {
+      "latitude": 31.9454,
+      "longitude": 35.2075,
+      "city": "Ramallah",
+      "radius": 10
+    },
+    "bethlehem": {
+      "latitude": 31.7075,
+      "longitude": 35.2007,
+      "city": "Bethlehem",
+      "radius": 8
+    },
+    "jerusalem": {
+      "latitude": 31.7683,
+      "longitude": 35.2137,
+      "city": "Jerusalem",
+      "radius": 15
+    }
+  },
+  "test_data": {
+    "incident_types": [
+      "accident",
+      "congestion",
+      "hazard",
+      "checkpoint",
+      "weather"
+    ],
+    "severities": ["low", "medium", "high", "critical"],
+    "statuses": ["active", "resolved", "archived"],
+    "incident_statuses": ["verified", "rejected", "resolved"],
+    "update_statuses": ["active", "resolved"]
+  },
+  "response_validation": {
+    "success_codes": [200, 201],
+    "auth_codes": [401],
+    "forbidden_codes": [403],
+    "not_found_codes": [404],
+    "server_error_codes": [500, 501, 502, 503]
+  },
+  "auth_config": {
+    "token_type": "Bearer",
+    "token_header": "Authorization",
+    "expiry_minutes": 60,
+    "refresh_endpoint": "/auth/refresh"
+  }
+}

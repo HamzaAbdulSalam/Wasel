@@ -1,5 +1,4 @@
 const jwt = require("jsonwebtoken");
-
 class JWTUtils {
   static getAccessSecret() {
     return process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET || "secret";
@@ -39,10 +38,8 @@ class JWTUtils {
       throw new Error("Invalid token");
     }
   }
-
   static decodeToken(token) {
     return jwt.decode(token);
   }
 }
-
 module.exports = JWTUtils;

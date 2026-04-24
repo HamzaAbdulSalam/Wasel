@@ -1,9 +1,7 @@
 const express = require("express");
 const AuthService = require("../services/AuthService");
 const { authenticate, authorize } = require("../middleware/auth");
-
 const router = express.Router();
-
 router.post("/register", async (req, res) => {
   try {
     const user = await AuthService.register(req.body);
@@ -12,8 +10,6 @@ router.post("/register", async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 });
-
-
 router.post("/login", async (req, res) => {
   try {
     const result = await AuthService.login(req.body);
@@ -43,9 +39,7 @@ router.get("/profile", authenticate, async (req, res) => {
     res.status(500).json({ message: "Unable to fetch profile" });
   }
 });
-
 router.get("/admin", authenticate, authorize("admin"), (req, res) => {
   res.json({ message: "Welcome, admin!" });
 });
-
 module.exports = router;

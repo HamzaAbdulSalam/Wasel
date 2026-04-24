@@ -1,0 +1,1064 @@
+{
+  "info": {
+    "_postman_id": "wasel-api-collection",
+    "name": "Wasel API Collection",
+    "description": "Wasel - Smart Mobility & Checkpoint Intelligence Platform API Documentation and Testing",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has message', function () {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.message).to.eql('User registered successfully');",
+                  "});",
+                  "",
+                  "pm.test('User object exists with email', function () {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.user).to.exist;",
+                  "  pm.expect(jsonData.user.email).to.exist;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"testuser@example.com\",\n  \"password\": \"SecurePassword123!\",\n  \"name\": \"Test User\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Register a new user account"
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has token', function () {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.token).to.exist;",
+                  "  pm.collectionVariables.set('token', jsonData.token);",
+                  "});",
+                  "",
+                  "pm.test('User object exists', function () {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.user).to.exist;",
+                  "  pm.expect(jsonData.user.id).to.exist;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"testuser@example.com\",\n  \"password\": \"SecurePassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login with email and password"
+          }
+        },
+        {
+          "name": "Get Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('User profile retrieved', function () {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.user).to.exist;",
+                  "  pm.expect(jsonData.user.email).to.exist;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/profile",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "profile"]
+            },
+            "description": "Get authenticated user profile"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Incidents",
+      "item": [
+        {
+          "name": "Create Incident",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Incident created with required fields', function () {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.data).to.exist;",
+                  "  pm.expect(jsonData.data.id).to.exist;",
+                  "  pm.expect(jsonData.data.title).to.exist;",
+                  "  pm.collectionVariables.set('incident_id', jsonData.data.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Road Accident\",\n  \"description\": \"Two vehicle collision on Main Street\",\n  \"type\": \"accident\",\n  \"severity\": \"high\",\n  \"latitude\": 31.9454,\n  \"longitude\": 35.2075,\n  \"city\": \"Ramallah\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/incidents",
+              "host": ["{{base_url}}"],
+              "path": ["incidents"]
+            },
+            "description": "Create a new incident report"
+          }
+        },
+        {
+          "name": "Get All Incidents",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has pagination properties', function () {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.data).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/incidents?city=Ramallah&status=active&page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["incidents"],
+              "query": [
+                {
+                  "key": "city",
+                  "value": "Ramallah"
+                },
+                {
+                  "key": "status",
+                  "value": "active"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Get all incidents with optional filtering"
+          }
+        },
+        {
+          "name": "Get Incidents by City",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains city data', function () {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.data).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/incidents/city/Ramallah?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["incidents", "city", "Ramallah"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Get incidents for a specific city"
+          }
+        },
+        {
+          "name": "Get Nearby Incidents",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains nearby incidents', function () {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.data).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/incidents/nearby/31.9454/35.2075?radius=10&page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["incidents", "nearby", "31.9454", "35.2075"],
+              "query": [
+                {
+                  "key": "radius",
+                  "value": "10"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Get incidents near a specific location (latitude, longitude)"
+          }
+        },
+        {
+          "name": "Get Incident by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Single incident object exists', function () {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.data).to.exist;",
+                  "  pm.expect(jsonData.data.id).to.exist;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/incidents/{{incident_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["incidents", "{{incident_id}}"]
+            },
+            "description": "Get a specific incident by ID"
+          }
+        },
+        {
+          "name": "Update Incident",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Incident updated successfully', function () {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.data).to.exist;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"severity\": \"critical\",\n  \"description\": \"Severe accident causing complete road closure\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/incidents/{{incident_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["incidents", "{{incident_id}}"]
+            },
+            "description": "Update incident details"
+          }
+        },
+        {
+          "name": "Update Incident Status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Status updated successfully', function () {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.data.status).to.exist;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"verified\",\n  \"reason\": \"Verified by patrol units on scene\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/incidents/{{incident_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["incidents", "{{incident_id}}", "status"]
+            },
+            "description": "Update incident status (Admin/Moderator only)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Alerts",
+      "item": [
+        {
+          "name": "Create Alert Subscription",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Subscription created with ID', function () {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.data).to.exist;",
+                  "  pm.expect(jsonData.data.id).to.exist;",
+                  "  pm.collectionVariables.set('subscription_id', jsonData.data.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"incidentTypes\": [\"accident\", \"congestion\"],\n  \"cities\": [\"Ramallah\", \"Bethlehem\"],\n  \"radiusKm\": 10\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/alerts/subscriptions",
+              "host": ["{{base_url}}"],
+              "path": ["alerts", "subscriptions"]
+            },
+            "description": "Create a new alert subscription"
+          }
+        },
+        {
+          "name": "Get Alert Subscriptions",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Subscriptions array exists', function () {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.data).to.exist;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/alerts/subscriptions?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["alerts", "subscriptions"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Get all alert subscriptions for the user"
+          }
+        },
+        {
+          "name": "Update Alert Subscription",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Subscription updated', function () {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.data).to.exist;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"incidentTypes\": [\"accident\"],\n  \"cities\": [\"Ramallah\"],\n  \"radiusKm\": 15\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/alerts/subscriptions/{{subscription_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["alerts", "subscriptions", "{{subscription_id}}"]
+            },
+            "description": "Update an alert subscription"
+          }
+        },
+        {
+          "name": "Delete Alert Subscription",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Subscription deleted message present', function () {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.message).to.include('deleted');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/alerts/subscriptions/{{subscription_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["alerts", "subscriptions", "{{subscription_id}}"]
+            },
+            "description": "Delete an alert subscription"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Routes",
+      "item": [
+        {
+          "name": "Estimate Route",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Route estimate contains required fields', function () {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.data).to.exist;",
+                  "  pm.expect(jsonData.data.estimatedTime).to.exist;",
+                  "  pm.expect(jsonData.data.estimatedDistance).to.exist;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"startLatitude\": 31.9454,\n  \"startLongitude\": 35.2075,\n  \"endLatitude\": 31.9400,\n  \"endLongitude\": 35.2100,\n  \"roadType\": \"highway\",\n  \"congestion\": \"medium\",\n  \"includeHazards\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/routes/estimate",
+              "host": ["{{base_url}}"],
+              "path": ["routes", "estimate"]
+            },
+            "description": "Estimate route with incident data and weather"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Updates",
+      "item": [
+        {
+          "name": "Create Update",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Update created with data', function () {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.data).to.exist;",
+                  "  pm.expect(jsonData.data.id).to.exist;",
+                  "  pm.collectionVariables.set('update_id', jsonData.data.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"incidentId\": {{incident_id}},\n  \"content\": \"Traffic has been cleared. All lanes are now open.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/updates",
+              "host": ["{{base_url}}"],
+              "path": ["updates"]
+            },
+            "description": "Create an incident update"
+          }
+        },
+        {
+          "name": "Get All Updates",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Updates array exists', function () {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.data).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/updates",
+              "host": ["{{base_url}}"],
+              "path": ["updates"]
+            },
+            "description": "Get all updates"
+          }
+        },
+        {
+          "name": "Get Updates by City",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('City updates array exists', function () {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.data).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/updates/city/Ramallah",
+              "host": ["{{base_url}}"],
+              "path": ["updates", "city", "Ramallah"]
+            },
+            "description": "Get updates for a specific city"
+          }
+        },
+        {
+          "name": "Get Update by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Update object exists', function () {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.data).to.exist;",
+                  "  pm.expect(jsonData.data.id).to.exist;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/updates/{{update_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["updates", "{{update_id}}"]
+            },
+            "description": "Get a specific update by ID"
+          }
+        },
+        {
+          "name": "Update Status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Update status changed', function () {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.data.status).to.exist;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"resolved\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/updates/{{update_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["updates", "{{update_id}}", "status"]
+            },
+            "description": "Update the status of an update"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reports",
+      "item": [
+        {
+          "name": "Get Report Statistics",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Statistics object exists', function () {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.data).to.exist;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reports/stats/report?city=Ramallah",
+              "host": ["{{base_url}}"],
+              "path": ["reports", "stats", "report"],
+              "query": [
+                {
+                  "key": "city",
+                  "value": "Ramallah"
+                }
+              ]
+            },
+            "description": "Get report statistics for a city"
+          }
+        },
+        {
+          "name": "Get Duplicate Groups",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Duplicate groups array exists', function () {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.data).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/reports/admin/duplicates/groups?city=Ramallah",
+              "host": ["{{base_url}}"],
+              "path": ["reports", "admin", "duplicates", "groups"],
+              "query": [
+                {
+                  "key": "city",
+                  "value": "Ramallah"
+                }
+              ]
+            },
+            "description": "Get duplicate report groups (Admin/Moderator only)"
+          }
+        },
+        {
+          "name": "Get Pending Moderations",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Moderation data exists', function () {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.data).to.exist;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/reports/admin/pending/moderations?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["reports", "admin", "pending", "moderations"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Get pending report moderations (Admin/Moderator only)"
+          }
+        },
+        {
+          "name": "Bulk Moderate Reports",
+          "event": [
+            {
+              "listen": "test",
+              "script": [
+                "pm.test('Status code is 200', function () {",
+                "  pm.response.to.have.status(200);",
+                "});",
+                "",
+                "pm.test('Bulk moderation response message exists', function () {",
+                "  var jsonData = pm.response.json();",
+                "  pm.expect(jsonData.message).to.exist;",
+                "});"
+              ]
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reportIds\": [1, 2, 3],\n  \"action\": \"approve\",\n  \"reason\": \"Photos verified and clear\",\n  \"notes\": \"All reports are legitimate\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/reports/admin/bulk-moderate",
+              "host": ["{{base_url}}"],
+              "path": ["reports", "admin", "bulk-moderate"]
+            },
+            "description": "Bulk moderate multiple reports (Admin/Moderator only)"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "incident_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "subscription_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "update_id",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

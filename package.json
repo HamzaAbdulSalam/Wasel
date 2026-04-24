@@ -4,7 +4,14 @@
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node server.js",
+    "perf:read": "k6 run performance/k6/scenarios.js --env SCENARIO=read_heavy",
+    "perf:write": "k6 run performance/k6/scenarios.js --env SCENARIO=write_heavy",
+    "perf:mixed": "k6 run performance/k6/scenarios.js --env SCENARIO=mixed_workload",
+    "perf:spike": "k6 run performance/k6/scenarios.js --env SCENARIO=spike_test",
+    "perf:soak": "k6 run performance/k6/scenarios.js --env SCENARIO=soak_test",
+    "perf:all": "k6 run performance/k6/scenarios.js --env SCENARIO=all",
+    "perf:compare": "node performance/compare-results.js"
   },
   "keywords": [],
   "author": "",
@@ -12,11 +19,13 @@
   "description": "",
   "dependencies": {
     "@prisma/client": "^5.22.0",
+    "axios": "^1.15.1",
     "bcryptjs": "^3.0.3",
     "dotenv": "^17.4.1",
     "express": "^5.2.1",
     "joi": "^18.1.2",
     "jsonwebtoken": "^9.0.3",
+    "node-cache": "^5.1.2",
     "pg": "^8.20.0"
   },
   "devDependencies": {
