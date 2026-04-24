@@ -1,6 +1,13 @@
 const prisma = require("../utils/prisma");
 
 class IncidentRepository {
+  getListUserSelect() {
+    return {
+      id: true,
+      username: true,
+    };
+  }
+
   // Create a new incident
   async create(data) {
     return await prisma.roadIncident.create({
@@ -84,11 +91,7 @@ class IncidentRepository {
         },
         include: {
           user: {
-            select: {
-              id: true,
-              username: true,
-              email: true,
-            },
+            select: this.getListUserSelect(),
           },
         },
       }),
@@ -118,11 +121,7 @@ class IncidentRepository {
         orderBy: { createdAt: "desc" },
         include: {
           user: {
-            select: {
-              id: true,
-              username: true,
-              email: true,
-            },
+            select: this.getListUserSelect(),
           },
         },
       }),
