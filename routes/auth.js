@@ -18,6 +18,18 @@ router.post("/login", async (req, res) => {
     res.status(401).json({ message: error.message });
   }
 });
+router.post("/refresh", async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+    const tokens = await AuthService.refreshAccessToken(refreshToken);
+    res.json({
+      message: "Token refreshed successfully",
+      ...tokens,
+    });
+  } catch (error) {
+    res.status(401).json({ message: error.message });
+  }
+});
 router.get("/profile", authenticate, async (req, res) => {
   try {
     const user = await AuthService.getUserById(req.user.id);

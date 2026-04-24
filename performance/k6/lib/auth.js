@@ -12,7 +12,7 @@ export function defaultHeaders(token) {
 
 function tryLogin(baseUrl, email, password) {
   const response = http.post(
-    `${baseUrl}/auth/login`,
+    `${baseUrl}/api/v1/auth/login`,
     JSON.stringify({ email, password }),
     { headers: { "Content-Type": "application/json" }, tags: { endpoint: "POST /auth/login" } },
   );
@@ -22,11 +22,11 @@ function tryLogin(baseUrl, email, password) {
   }
 
   const payload = response.json();
-  if (!payload || !payload.token) {
-    fail(`Login did not return token for ${email}`);
+  if (!payload || !payload.accessToken) {
+    fail(`Login did not return access token for ${email}`);
   }
 
-  return payload.token;
+  return payload.accessToken;
 }
 
 export function createUsersAndTokens(baseUrl, userCount) {
@@ -47,7 +47,7 @@ export function createUsersAndTokens(baseUrl, userCount) {
     const password = `K6pass!${i}A`;
 
     const registerResponse = http.post(
-      `${baseUrl}/auth/register`,
+      `${baseUrl}/api/v1/auth/register`,
       JSON.stringify({ username, email, password, role: "user" }),
       { headers: { "Content-Type": "application/json" }, tags: { endpoint: "POST /auth/register" } },
     );

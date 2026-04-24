@@ -120,7 +120,7 @@ function recordResult(response) {
 
 export function readHeavy() {
   const query = buildIncidentQuery(__ENV.TEST_CITY);
-  const response = http.get(`${BASE_URL}/incidents?${query}`, {
+  const response = http.get(`${BASE_URL}/api/v1/incidents?${query}`, {
     tags: { endpoint: "GET /incidents", workload: "read" },
   });
 
@@ -133,7 +133,7 @@ export function writeHeavy(data) {
   const payload = buildReportPayload();
 
   const response = http.post(
-    `${BASE_URL}/reports`,
+    `${BASE_URL}/api/v1/reports`,
     JSON.stringify(payload),
     {
       ...defaultHeaders(token),
@@ -151,13 +151,13 @@ export function mixedWorkload(data) {
 
   if (operation === "read") {
     const query = buildIncidentQuery(__ENV.TEST_CITY);
-    const response = http.get(`${BASE_URL}/incidents?${query}`, {
+    const response = http.get(`${BASE_URL}/api/v1/incidents?${query}`, {
       tags: { endpoint: "GET /incidents", workload: "mixed-read" },
     });
     recordResult(response);
   } else {
     const response = http.post(
-      `${BASE_URL}/reports`,
+      `${BASE_URL}/api/v1/reports`,
       JSON.stringify(buildReportPayload()),
       {
         ...defaultHeaders(token),
@@ -172,7 +172,7 @@ export function mixedWorkload(data) {
 
 export function spikeTest() {
   const query = buildIncidentQuery(__ENV.TEST_CITY);
-  const response = http.get(`${BASE_URL}/incidents?${query}`, {
+  const response = http.get(`${BASE_URL}/api/v1/incidents?${query}`, {
     tags: { endpoint: "GET /incidents", workload: "spike" },
   });
 
@@ -183,14 +183,14 @@ export function spikeTest() {
 export function soakTest(data) {
   const token = getToken(data);
 
-  const readResponse = http.get(`${BASE_URL}/incidents?${buildIncidentQuery(__ENV.TEST_CITY)}`, {
+  const readResponse = http.get(`${BASE_URL}/api/v1/incidents?${buildIncidentQuery(__ENV.TEST_CITY)}`, {
     tags: { endpoint: "GET /incidents", workload: "soak-read" },
   });
   recordResult(readResponse);
 
   if (Math.random() < 0.25) {
     const writeResponse = http.post(
-      `${BASE_URL}/reports`,
+      `${BASE_URL}/api/v1/reports`,
       JSON.stringify(buildReportPayload()),
       {
         ...defaultHeaders(token),

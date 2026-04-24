@@ -56,14 +56,17 @@ class AuthService {
     if (!passwordMatch) {
       throw new Error("Invalid email or password");
     }
-    const token = JWTUtils.generateToken({
+    const tokenPayload = {
       id: user.id,
       email: user.email,
       role: user.role
-    });
+    };
+    const accessToken = JWTUtils.generateAccessToken(tokenPayload);
+    const refreshToken = JWTUtils.generateRefreshToken(tokenPayload);
     return {
       message: "Login successful",
-      token,
+      accessToken,
+      refreshToken,
       user: {
         id: user.id,
         username: user.username,
@@ -84,6 +87,30 @@ class AuthService {
       username: user.username,
       email: user.email,
       role: user.role
+    };
+  }
+
+  static async refreshAccessToken(refreshToken) {
+    if (!refreshToken) {
+      throw new Error("Refresh token is required");
+    }
+    const decoded = JWTUtils.verifyRefreshToken(refreshToken);
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.id }
+    });
+    if (!user) {
+      throw new Error("User not found");
+    }
+    const tokenPayload = {
+      id: user.id,
+      email: user.email,
+      role: user.role
+    };
+    const accessToken = JWTUtils.generateAccessToken(tokenPayload);
+    const rotatedRefreshToken = JWTUtils.generateRefreshToken(tokenPayload);
+    return {
+      accessToken,
+      refreshToken: rotatedRefreshToken,
     };
   }
 }
