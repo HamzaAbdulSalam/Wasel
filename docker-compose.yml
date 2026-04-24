@@ -1,0 +1,35 @@
+version: "3.9"
+
+services:
+  api:
+    build: .
+    container_name: wasel-api
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      DATABASE_URL: postgresql://wasel:wasel@db:5432/wasel
+      JWT_ACCESS_SECRET: change-me-access-secret
+      JWT_REFRESH_SECRET: change-me-refresh-secret
+      JWT_ACCESS_EXPIRES_IN: 15m
+      JWT_REFRESH_EXPIRES_IN: 7d
+      OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY:-}
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    container_name: wasel-db
+    environment:
+      POSTGRES_DB: wasel
+      POSTGRES_USER: wasel
+      POSTGRES_PASSWORD: wasel
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  pgdata:
