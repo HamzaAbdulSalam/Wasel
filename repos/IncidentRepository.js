@@ -1,6 +1,6 @@
 const prisma = require("../utils/prisma");
-
 class IncidentRepository {
+
   getListUserSelect() {
     return {
       id: true,
@@ -8,7 +8,7 @@ class IncidentRepository {
     };
   }
 
-  // Create a new incident
+
   async create(data) {
     return await prisma.roadIncident.create({
       data: {
@@ -32,8 +32,6 @@ class IncidentRepository {
       },
     });
   }
-
-  // Get incident by ID
   async findById(id) {
     return await prisma.roadIncident.findUnique({
       where: { id },
@@ -59,8 +57,6 @@ class IncidentRepository {
       },
     });
   }
-
-  // Get all incidents with filtering, sorting, and pagination
   async findAll(filters = {}) {
     const {
       city,
@@ -72,15 +68,12 @@ class IncidentRepository {
       sortBy = "createdAt",
       sortOrder = "desc",
     } = filters;
-
     const skip = (page - 1) * limit;
-
     const where = {};
     if (city) where.city = city;
     if (status) where.status = status;
     if (type) where.type = type;
     if (severity) where.severity = severity;
-
     const [incidents, total] = await Promise.all([
       prisma.roadIncident.findMany({
         where,
@@ -97,7 +90,6 @@ class IncidentRepository {
       }),
       prisma.roadIncident.count({ where }),
     ]);
-
     return {
       data: incidents,
       pagination: {
@@ -108,11 +100,8 @@ class IncidentRepository {
       },
     };
   }
-
-  // Get incidents by city
   async findByCity(city, page = 1, limit = 10) {
     const skip = (page - 1) * limit;
-
     const [incidents, total] = await Promise.all([
       prisma.roadIncident.findMany({
         where: { city },
@@ -127,7 +116,6 @@ class IncidentRepository {
       }),
       prisma.roadIncident.count({ where: { city } }),
     ]);
-
     return {
       data: incidents,
       pagination: {
@@ -138,12 +126,9 @@ class IncidentRepository {
       },
     };
   }
-
-  // Get active incidents near coordinates (within 10km)
-  async findNearby(latitude, longitude, radiusKm = 10) {
-    // Simple distance calculation using Haversine formula
-    // In production, use PostGIS for better performance
-    return await prisma.$queryRaw`
+  async findNearby(latitude, longitude, radiusKm = 10, page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
+    const results = await prisma.$queryRaw`
       SELECT 
         id, title, description, type, severity, status,
         city, latitude, longitude, "userId", "createdAt", "updatedAt",
@@ -156,10 +141,28 @@ class IncidentRepository {
       COS(RADIANS(${latitude})) * COS(RADIANS(latitude)) * POWER(SIN(RADIANS(longitude - ${longitude}) / 2), 2))))
       <= ${radiusKm}
       ORDER BY distance ASC
+      LIMIT ${limit}
+      OFFSET ${skip}
     `;
+    const countResult = await prisma.$queryRaw`
+      SELECT COUNT(*) as count
+      FROM "RoadIncident"
+      WHERE status = 'active'
+      AND (6371 * 2 * ASIN(SQRT(POWER(SIN(RADIANS(latitude - ${latitude}) / 2), 2) +
+      COS(RADIANS(${latitude})) * COS(RADIANS(latitude)) * POWER(SIN(RADIANS(longitude - ${longitude}) / 2), 2))))
+      <= ${radiusKm}
+    `;
+    const total = countResult[0]?.count || 0;
+    return {
+      data: results,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+      },
+    };
   }
-
-  // Update incident
   async update(id, data) {
     return await prisma.roadIncident.update({
       where: { id },
@@ -183,8 +186,6 @@ class IncidentRepository {
       },
     });
   }
-
-  // Update incident status
   async updateStatus(id, newStatus) {
     return await prisma.roadIncident.update({
       where: { id },
@@ -200,26 +201,19 @@ class IncidentRepository {
       },
     });
   }
-
-  // Delete incident
   async delete(id) {
     return await prisma.roadIncident.delete({
       where: { id },
     });
   }
-
-  // Get statistics
   async getStatistics(city = null) {
     const where = city ? { city } : {};
-
     const stats = await prisma.roadIncident.groupBy({
       by: ["status", "type", "severity"],
       where,
       _count: true,
     });
-
     return stats;
   }
 }
-
 module.exports = new IncidentRepository();

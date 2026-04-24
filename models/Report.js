@@ -27,5 +27,4 @@ class Report {
     this.createdAt = createdAt;
   }
 }
-
 module.exports = Report;

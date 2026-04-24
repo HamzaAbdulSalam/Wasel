@@ -1,9 +1,7 @@
 const express = require("express");
 const IncidentService = require("../services/IncidentService");
 const { authenticate, authorize } = require("../middleware/auth");
-
 const router = express.Router();
-
 router.post("/", authenticate, async (req, res) => {
   try {
     const incident = await IncidentService.createIncident(req.user.id, req.body);
@@ -15,7 +13,6 @@ router.post("/", authenticate, async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 });
-
 router.get("/", async (req, res) => {
   try {
     const { city, type, severity, status, page, limit, sortBy, sortOrder } = req.query;
@@ -29,14 +26,12 @@ router.get("/", async (req, res) => {
       sortBy: sortBy || "createdAt",
       sortOrder: sortOrder || "desc",
     };
-
     const result = await IncidentService.getAllIncidents(filters);
     res.json(result);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
-
 router.get("/city/:city", async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -51,22 +46,24 @@ router.get("/city/:city", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
-
 router.get("/nearby/:latitude/:longitude", async (req, res) => {
   try {
     const { latitude, longitude } = req.params;
     const radiusKm = req.query.radius || 10;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
     const nearby = await IncidentService.getNearbyIncidents(
       parseFloat(latitude),
       parseFloat(longitude),
-      parseFloat(radiusKm)
+      parseFloat(radiusKm),
+      page,
+      limit
     );
-    res.json({ data: nearby });
+    res.json(nearby);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
-
 router.get("/:id", async (req, res) => {
   try {
     const incident = await IncidentService.getIncidentById(req.params.id);
@@ -75,7 +72,6 @@ router.get("/:id", async (req, res) => {
     res.status(404).json({ message: error.message });
   }
 });
-
 router.patch("/:id", authenticate, async (req, res) => {
   try {
     const updated = await IncidentService.updateIncident(
@@ -94,15 +90,12 @@ router.patch("/:id", authenticate, async (req, res) => {
     });
   }
 });
-
 router.patch("/:id/status", authenticate, authorize(["admin", "moderator"]), async (req, res) => {
   try {
     const { status, reason } = req.body;
     if (!status) {
       return res.status(400).json({ message: "Status is required" });
     }
-
-
     let result;
     if (status === "verified") {
       result = await IncidentService.verifyIncident(
@@ -120,7 +113,6 @@ router.patch("/:id/status", authenticate, authorize(["admin", "moderator"]), asy
         reason
       );
     }
-
     res.json({
       message: "Incident status updated successfully",
       data: result,
@@ -134,7 +126,6 @@ router.patch("/:id/status", authenticate, authorize(["admin", "moderator"]), asy
     });
   }
 });
-
 router.delete("/:id", authenticate, async (req, res) => {
   try {
     await IncidentService.deleteIncident(
@@ -152,17 +143,20 @@ router.delete("/:id", authenticate, async (req, res) => {
     });
   }
 });
-
 router.get("/:id/history", async (req, res) => {
   try {
-    const history = await IncidentService.getStatusHistory(parseInt(req.params.id));
-    res.json({ data: history });
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const history = await IncidentService.getStatusHistory(
+      parseInt(req.params.id),
+      page,
+      limit
+    );
+    res.json(history);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
-
-// Get statistics
 router.get("/statistics/all", async (req, res) => {
   try {
     const { city } = req.query;
@@ -172,16 +166,14 @@ router.get("/statistics/all", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
-
-
 router.get("/activity/recent", async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
-    const activity = await IncidentService.getRecentActivity(limit);
-    res.json({ data: activity });
+    const activity = await IncidentService.getRecentActivity(page, limit);
+    res.json(activity);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
-
 module.exports = router;

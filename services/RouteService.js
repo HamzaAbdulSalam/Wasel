@@ -1,11 +1,9 @@
 const Joi = require("joi");
 const prisma = require("../utils/prisma");
+const GeolocationService = require("./GeolocationService");
+const WeatherService = require("./WeatherService");
 
 class RouteService {
-  /**
-   * Haversine formula to calculate distance between two coordinates (in km)
-   * Using heuristic approach for estimation
-   */
   calculateDistance(lat1, lon1, lat2, lon2) {
     const R = 6371; // Earth's radius in kilometers
     const dLat = this.degreesToRadians(lat2 - lat1);
@@ -19,17 +17,10 @@ class RouteService {
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   }
-
   degreesToRadians(degrees) {
     return degrees * (Math.PI / 180);
   }
-
-  /**
-   * Estimate duration based on distance and road conditions
-   * Uses heuristic speed calculations
-   */
   estimateDuration(distance, roadType = "standard", congestion = "normal") {
-    // Base speeds in km/h based on road type
     const speedMap = {
       highway: 100,
       major_road: 60,
@@ -37,8 +28,6 @@ class RouteService {
       urban: 30,
       residential: 20,
     };
-
-    // Congestion multipliers
     const congestionMap = {
       light: 1.0,
       normal: 1.2,
@@ -46,35 +35,23 @@ class RouteService {
       heavy: 2.0,
       severe: 2.5,
     };
-
     const baseSpeed = speedMap[roadType] || speedMap.standard;
     const congestionMultiplier =
       congestionMap[congestion] || congestionMap.normal;
     const effectiveSpeed = baseSpeed / congestionMultiplier;
     const durationHours = distance / effectiveSpeed;
     const durationMinutes = Math.round(durationHours * 60);
-
     return {
       minutes: durationMinutes,
       hours: Math.round((durationMinutes / 60) * 10) / 10, // 1 decimal place
     };
   }
-
-  /**
-   * Check if a point is within a radius of another point
-   */
   isPointWithinRadius(lat, lon, centerLat, centerLon, radiusKm) {
     const distance = this.calculateDistance(lat, lon, centerLat, centerLon);
     return distance <= radiusKm;
   }
-
-  /**
-   * Check if route passes through checkpoints
-   * Returns checkpoints that are near the route
-   */
   async checkpointsOnRoute(startLat, startLon, endLat, endLon, radiusKm = 2) {
     try {
-      // Get all active incidents which may include checkpoint locations
       const incidents = await prisma.roadIncident.findMany({
         where: {
           status: "active",
@@ -88,29 +65,20 @@ class RouteService {
           city: true,
         },
       });
-
-      // Filter incidents that are near the route
       const checkpointsOnRoute = incidents.filter((incident) => {
         const lat = parseFloat(incident.latitude);
         const lon = parseFloat(incident.longitude);
-        // Check if incident is within radius of route
         return (
           this.isPointWithinRadius(lat, lon, startLat, startLon, radiusKm) ||
           this.isPointWithinRadius(lat, lon, endLat, endLon, radiusKm)
         );
       });
-
       return checkpointsOnRoute;
     } catch (error) {
       console.error("Error checking checkpoints on route:", error);
       return [];
     }
   }
-
-  /**
-   * Check if area is affected by incidents
-   * Returns incidents in the surrounding area
-   */
   async getAreaHazards(centerLat, centerLon, radiusKm = 5) {
     try {
       const hazards = await prisma.roadIncident.findMany({
@@ -129,7 +97,6 @@ class RouteService {
           createdAt: true,
         },
       });
-
       const areaHazards = hazards.filter((hazard) => {
         const lat = parseFloat(hazard.latitude);
         const lon = parseFloat(hazard.longitude);
@@ -141,55 +108,35 @@ class RouteService {
           radiusKm,
         );
       });
-
       return areaHazards;
     } catch (error) {
       console.error("Error getting area hazards:", error);
       return [];
     }
   }
-
-  /**
-   * Estimate route between two locations
-   * @param {number} startLat - Starting latitude
-   * @param {number} startLon - Starting longitude
-   * @param {number} endLat - Ending latitude
-   * @param {number} endLon - Ending longitude
-   * @param {object} options - Optional parameters
-   */
   async estimateRoute(startLat, startLon, endLat, endLon, options = {}) {
     const {
       roadType = "standard",
       congestion = "normal",
       includeHazards = true,
     } = options;
-
-    // Validate input
     const schema = Joi.object({
       startLat: Joi.number().min(-90).max(90).required(),
       startLon: Joi.number().min(-180).max(180).required(),
       endLat: Joi.number().min(-90).max(90).required(),
       endLon: Joi.number().min(-180).max(180).required(),
     });
-
     const { error } = schema.validate({
       startLat,
       startLon,
       endLat,
       endLon,
     });
-
     if (error) {
       throw new Error(`Invalid coordinates: ${error.details[0].message}`);
     }
-
-    // Calculate distance
     const distance = this.calculateDistance(startLat, startLon, endLat, endLon);
-
-    // Estimate duration
     const duration = this.estimateDuration(distance, roadType, congestion);
-
-    // Get hazards on route if requested
     let hazards = [];
     if (includeHazards) {
       hazards = await this.getAreaHazards(startLat, startLon, 5);
@@ -198,8 +145,6 @@ class RouteService {
         ...new Map([...hazards, ...endHazards].map((h) => [h.id, h])).values(),
       ];
     }
-
-    // Prepare metadata about factors affecting the route
     const metadata = {
       roadType,
       congestionLevel: congestion,
@@ -212,7 +157,6 @@ class RouteService {
           : "No hazards detected",
       ],
     };
-
     return {
       startLocation: {
         latitude: startLat,
@@ -232,15 +176,6 @@ class RouteService {
       estimatedAt: new Date(),
     };
   }
-
-  /**
-   * Estimate route with constraints (avoiding checkpoints or areas)
-   * @param {number} startLat - Starting latitude
-   * @param {number} startLon - Starting longitude
-   * @param {number} endLat - Ending latitude
-   * @param {number} endLon - Ending longitude
-   * @param {object} constraints - Constraints object
-   */
   async estimateRouteWithConstraints(
     startLat,
     startLon,
@@ -254,8 +189,6 @@ class RouteService {
       roadType = "standard",
       congestion = "normal",
     } = constraints;
-
-    // Get base route estimation
     const baseRoute = await this.estimateRoute(
       startLat,
       startLon,
@@ -267,8 +200,6 @@ class RouteService {
         includeHazards: true,
       },
     );
-
-    // Check for checkpoints if requested
     let checkpointWarnings = [];
     if (avoidCheckpoints) {
       const checkpointsNearby = await this.checkpointsOnRoute(
@@ -286,9 +217,7 @@ class RouteService {
         longitude: cp.longitude,
         message: `Route may pass through checkpoint: ${cp.title}`,
       }));
-
       if (checkpointWarnings.length > 0) {
-        // Estimate impact of avoiding checkpoints (add 20% to duration and distance)
         baseRoute.distanceWithConstraints = {
           km: Math.round(baseRoute.distance.km * 1.2 * 100) / 100,
           miles: Math.round(baseRoute.distance.miles * 1.2 * 100) / 100,
@@ -300,20 +229,16 @@ class RouteService {
         };
       }
     }
-
-    // Check for restricted areas
     let restrictedAreaWarnings = [];
     if (avoidAreas.length > 0) {
       restrictedAreaWarnings = avoidAreas.map((area) => ({
         area: area.name,
         impact: `Route avoids ${area.name}`,
       }));
-
       if (
         restrictedAreaWarnings.length > 0 &&
         !baseRoute.distanceWithConstraints
       ) {
-        // Estimate impact of avoiding areas (add 15% for each area)
         const areaImpact = restrictedAreaWarnings.length * 0.15;
         baseRoute.distanceWithConstraints = {
           km: Math.round(baseRoute.distance.km * (1 + areaImpact) * 100) / 100,
@@ -329,20 +254,16 @@ class RouteService {
         };
       }
     }
-
-    // Update metadata with constraint information
     baseRoute.metadata.constraints = {
       avoidingCheckpoints: avoidCheckpoints,
       avoidingAreas: avoidAreas.map((a) => a.name),
       checkpointWarnings: checkpointWarnings.length,
       restrictedAreaWarnings: restrictedAreaWarnings.length,
     };
-
     baseRoute.metadata.factors.push(
       ...checkpointWarnings.map((w) => w.message),
       ...restrictedAreaWarnings.map((w) => w.impact),
     );
-
     return {
       ...baseRoute,
       checkpointWarnings,
@@ -362,10 +283,6 @@ class RouteService {
       },
     };
   }
-
-  /**
-   * Get validation schema for route estimation request
-   */
   getEstimateRouteSchema() {
     return Joi.object({
       startLatitude: Joi.number().min(-90).max(90).required(),
@@ -381,10 +298,143 @@ class RouteService {
       includeHazards: Joi.boolean().default(true),
     });
   }
+  /**
+   * Get address details for coordinates using external geocoding API
+   */
+  async getLocationDetails(latitude, longitude) {
+    try {
+      return await GeolocationService.getAddressFromCoordinates(latitude, longitude);
+    } catch (error) {
+      console.warn(`Geocoding failed, returning basic coordinates: ${error.message}`);
+      return {
+        latitude,
+        longitude,
+        address: 'Unknown',
+        city: 'Unknown',
+        country: 'UAE',
+        error: true,
+      };
+    }
+  }
 
   /**
-   * Get validation schema for constrained route estimation
+   * Search for locations by address using external API
    */
+  async searchLocation(address) {
+    try {
+      return await GeolocationService.getCoordinatesFromAddress(address);
+    } catch (error) {
+      console.error(`Location search failed: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Get weather information for a route
+   */
+  async getRouteWeather(startLat, startLon, endLat, endLon) {
+    try {
+      // Get weather at start and end points
+      const [startWeather, endWeather] = await Promise.all([
+        WeatherService.getCurrentWeather(startLat, startLon),
+        WeatherService.getCurrentWeather(endLat, endLon),
+      ]);
+
+      const [startRisk, endRisk] = await Promise.all([
+        WeatherService.assessWeatherRisk(startLat, startLon),
+        WeatherService.assessWeatherRisk(endLat, endLon),
+      ]);
+
+      return {
+        startPoint: {
+          weather: startWeather,
+          riskAssessment: startRisk,
+        },
+        endPoint: {
+          weather: endWeather,
+          riskAssessment: endRisk,
+        },
+        maxRiskLevel: this.getMaxRiskLevel(startRisk.riskLevel, endRisk.riskLevel),
+        routeWeatherFactors: this.analyzeRouteWeather(startRisk, endRisk),
+      };
+    } catch (error) {
+      console.warn(`Weather fetch failed: ${error.message}`);
+      return null;
+    }
+  }
+
+  /**
+   * Analyze weather factors affecting the route
+   */
+  analyzeRouteWeather(startRisk, endRisk) {
+    const factors = [];
+    
+    // Combine risks from both points
+    const allRisks = {
+      wind: startRisk.risks.wind || endRisk.risks.wind,
+      rain: startRisk.risks.rain || endRisk.risks.rain,
+      snow: startRisk.risks.snow || endRisk.risks.snow,
+      fog: startRisk.risks.fog || endRisk.risks.fog,
+      thunder: startRisk.risks.thunder || endRisk.risks.thunder,
+      extreme: startRisk.risks.extreme || endRisk.risks.extreme,
+    };
+
+    if (allRisks.rain) factors.push('Heavy rain expected - increase following distance');
+    if (allRisks.wind) factors.push('Strong winds - maintain firm vehicle control');
+    if (allRisks.snow) factors.push('Snow conditions - use appropriate tires');
+    if (allRisks.fog) factors.push('Reduced visibility - use headlights');
+    if (allRisks.thunder) factors.push('Thunderstorm risk - avoid open areas');
+    if (allRisks.extreme) factors.push('Extreme weather - consider postponing travel');
+
+    return factors;
+  }
+
+  /**
+   * Get maximum risk level between two risk levels
+   */
+  getMaxRiskLevel(level1, level2) {
+    const levels = { safe: 0, moderate: 1, high: 2, critical: 3 };
+    return levels[level1] >= levels[level2] ? level1 : level2;
+  }
+
+  /**
+   * Estimate route with external API data (location details & weather)
+   */
+  async estimateRouteEnhanced(startLat, startLon, endLat, endLon, options = {}) {
+    // Get base route estimation
+    const baseRoute = await this.estimateRoute(startLat, startLon, endLat, endLon, options);
+
+    try {
+      // Enrich with location details
+      const startDetails = await this.getLocationDetails(startLat, startLon);
+      const endDetails = await this.getLocationDetails(endLat, endLon);
+
+      baseRoute.startLocation = {
+        ...baseRoute.startLocation,
+        ...startDetails,
+      };
+
+      baseRoute.endLocation = {
+        ...baseRoute.endLocation,
+        ...endDetails,
+      };
+
+      // Add weather information
+      const weather = await this.getRouteWeather(startLat, startLon, endLat, endLon);
+      if (weather) {
+        baseRoute.weatherData = weather;
+        baseRoute.metadata.factors.push(...(weather.routeWeatherFactors || []));
+      }
+
+      baseRoute.enhancedWithExternalAPIs = true;
+    } catch (error) {
+      console.warn(`Route enhancement failed: ${error.message}. Returning basic estimate.`);
+      baseRoute.enhancedWithExternalAPIs = false;
+    }
+
+    return baseRoute;
+  }
+
   getConstrainedRouteSchema() {
     return Joi.object({
       startLatitude: Joi.number().min(-90).max(90).required(),
@@ -410,5 +460,4 @@ class RouteService {
     });
   }
 }
-
 module.exports = new RouteService();

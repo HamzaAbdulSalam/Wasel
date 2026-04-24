@@ -1,23 +1,19 @@
 const express = require("express");
 const UpdateService = require("../services/UpdateService");
 const { authenticate } = require("../middleware/auth");
-
 const router = express.Router();
-
 router.get("/test", (req, res) => {
   res.json({
     success: true,
     message: "Updates routes are available",
   });
 });
-
 router.post("/", authenticate, async (req, res) => {
   try {
     const update = await UpdateService.createUpdate({
       ...req.body,
       userId: req.user.id,
     });
-
     res.status(201).json({
       success: true,
       data: update,
@@ -29,11 +25,9 @@ router.post("/", authenticate, async (req, res) => {
     });
   }
 });
-
 router.get("/city/:city", async (req, res) => {
   try {
     const updates = await UpdateService.getUpdatesByCity(req.params.city);
-
     res.json({
       success: true,
       data: updates,
@@ -45,11 +39,9 @@ router.get("/city/:city", async (req, res) => {
     });
   }
 });
-
 router.get("/", async (req, res) => {
   try {
     const updates = await UpdateService.getAllUpdates();
-
     res.json({
       success: true,
       data: updates,
@@ -61,11 +53,9 @@ router.get("/", async (req, res) => {
     });
   }
 });
-
 router.get("/:id", async (req, res) => {
   try {
     const update = await UpdateService.getUpdateById(req.params.id);
-
     res.json({
       success: true,
       data: update,
@@ -77,11 +67,9 @@ router.get("/:id", async (req, res) => {
     });
   }
 });
-
 router.patch("/:id/status", authenticate, async (req, res) => {
   try {
     const update = await UpdateService.updateStatus(req.params.id, req.body.status);
-
     res.json({
       success: true,
       data: update,
@@ -93,5 +81,4 @@ router.patch("/:id/status", authenticate, async (req, res) => {
     });
   }
 });
-
 module.exports = router;
