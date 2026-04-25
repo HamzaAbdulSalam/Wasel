@@ -150,15 +150,21 @@ npm install
 Create `.env` in project root:
 
 ```bash
-DATABASE_URL=postgresql://USER:PASSWORD@HOST:5432/DB_NAME
-MIGRATION_URL=postgresql://USER:PASSWORD@HOST:5432/DB_NAME
+# Connect to Supabase via connection pooling
+DATABASE_URL="postgresql://postgres.clwcxxyhzmqfhliagvwk:Beren12345__6789@aws-1-ap-northeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
 
-JWT_ACCESS_SECRET=replace-with-strong-secret
-JWT_REFRESH_SECRET=replace-with-strong-secret
-JWT_ACCESS_EXPIRES_IN=15m
-JWT_REFRESH_EXPIRES_IN=7d
+# For migrations only
+MIGRATION_URL="postgresql://postgres.clwcxxyhzmqfhliagvwk:Beren12345__6789@aws-1-ap-northeast-1.pooler.supabase.com:6543/postgres"
 
-OPENWEATHER_API_KEY=your-key
+
+# Weather API (get free key from https://openweathermap.org/api)
+OPENWEATHER_API_KEY=d8fb437972b557a868f739561b84b1e5
+
+# Optional configurations
+API_CACHE_ENABLED=true
+API_TIMEOUT_MS=8000
+WEATHER_CACHE_TTL=600
+GEO_CACHE_TTL=3600
 ```
 
 ### 3) Apply database migrations
